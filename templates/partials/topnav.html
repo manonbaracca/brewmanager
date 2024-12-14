@@ -1,0 +1,56 @@
+<div class="container mt-4">
+    <!-- Corcho -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header text-white" style="background-color: #2E8B57;">
+                    Pinboard
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="my-3">Información</h5>
+                    <p>Información inportante</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header text-white" style="background-color: #2E8B57;">
+                    Estadísticas
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Usuarios -->
+                        <div class="col-md-4">
+                            <a class="text-decoration-none" href="{% url 'dashboard-staff'%}">
+                                <div class="card my-card text-center p-4 shadow-sm" style="background-color: #E9F5E6;">
+                                    <h5 class="text-success">Usuarios <i class="fas fa-users"></i></h5>
+                                    <h3 class="text-dark">4</h3>
+                                </div>
+                            </a>
+                        </div>
+                        <!-- Productos -->
+                        <div class="col-md-4">
+                            <a class="text-decoration-none" href="{% url 'dashboard-producto'%}">
+                                <div class="card my-card text-center p-4 shadow-sm" style="background-color: #E9F5E6;">
+                                    <h5 class="text-success">Productos <i class="fas fa-box"></i></h5>
+                                    <h3 class="text-dark">4</h3>
+                                </div>
+                            </a>
+                        </div>
+                        <!-- Pedidos -->
+                        <div class="col-md-4">
+                            <a class="text-decoration-none" href="{% url 'dashboard-pedido'%}">
+                                <div class="card my-card text-center p-4 shadow-sm" style="background-color: #E9F5E6;">
+                                    <h5 class="text-success">Pedidos <i class="fas fa-shipping-fast"></i></h5>
+                                    <h3 class="text-dark">4</h3>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

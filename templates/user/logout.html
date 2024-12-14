@@ -1,0 +1,20 @@
+{% extends 'partials/base.html' %}
+{% block title %}Cerrar Sesión{% endblock %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="border p-3 bg-white text-center">
+                <h4 class="mb-4">Has cerrado sesión exitosamente</h4>
+                <hr>
+                <div class="alert alert-info">
+                    <p>Gracias por usar Stockify.</p>
+                </div>
+                <a href="{% url 'user-login' %}" class="btn btn-primary">Iniciar Sesión</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
