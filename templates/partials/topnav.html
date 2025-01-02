@@ -8,7 +8,18 @@
                 </div>
                 <div class="card-body text-center">
                     <h5 class="my-3">Información</h5>
-                    <p>Información inportante</p>
+                    {% if productos_sin_stock %}
+                        <div class="alert alert-danger">
+                            <p><strong>Atención:</strong> Los siguientes productos están sin stock:</p>
+                            <ul class="list-unstyled">
+                                {% for producto in productos_sin_stock %}
+                                    <li>{{ producto.nombre }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p> No hay productos sin stock.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -26,7 +37,7 @@
                             <a class="text-decoration-none" href="{% url 'dashboard-staff'%}">
                                 <div class="card my-card text-center p-4 shadow-sm" style="background-color: #E9F5E6;">
                                     <h5 class="text-success">Usuarios <i class="fas fa-users"></i></h5>
-                                    <h3 class="text-dark">4</h3>
+                                    <h3 class="text-dark">{{ trabajadores_count }}</h3>
                                 </div>
                             </a>
                         </div>
@@ -35,7 +46,7 @@
                             <a class="text-decoration-none" href="{% url 'dashboard-producto'%}">
                                 <div class="card my-card text-center p-4 shadow-sm" style="background-color: #E9F5E6;">
                                     <h5 class="text-success">Productos <i class="fas fa-box"></i></h5>
-                                    <h3 class="text-dark">4</h3>
+                                    <h3 class="text-dark">{{ product_count }}</h3>
                                 </div>
                             </a>
                         </div>
@@ -44,7 +55,7 @@
                             <a class="text-decoration-none" href="{% url 'dashboard-pedido'%}">
                                 <div class="card my-card text-center p-4 shadow-sm" style="background-color: #E9F5E6;">
                                     <h5 class="text-success">Pedidos <i class="fas fa-shipping-fast"></i></h5>
-                                    <h3 class="text-dark">4</h3>
+                                    <h3 class="text-dark">{{ pedidos_count }}</h3>
                                 </div>
                             </a>
                         </div>

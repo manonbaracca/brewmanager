@@ -1,0 +1,61 @@
+{% extends 'partials/base.html' %}
+{% block title %} Usuarios {% endblock %}
+
+{% block content %}
+
+{% include 'partials/topnav.html' %}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header text-white text-center" style="background-color: #2E8B57;">
+                    Información del Usuario
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table table-borderless">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2" class="text-center">
+                                            <span class="h4">Detalles del Usuario</span>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2">
+                                            <hr>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" class="text-muted" style="width: 30%;">Usuario</th>
+                                        <td>{{ trabajadores.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-muted">Email</th>
+                                        <td>{{ trabajadores.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-muted">Teléfono</th>
+                                        <td>{{ trabajadores.profile.telefono }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-muted">Dirección</th>
+                                        <td>{{ trabajadores.profile.direccion }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <a href="{% url 'dashboard-staff' %}" class="btn btn-secondary">Volver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

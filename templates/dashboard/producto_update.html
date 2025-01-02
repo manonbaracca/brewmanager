@@ -1,0 +1,27 @@
+{% extends 'partials/base.html' %}
+{% block title %} Editar {% endblock %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="row my-5 justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header text-white text-center" style="background-color: #2E8B57;">
+                Editar Producto
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-flex justify-content-between mt-3">
+                        <a class="btn btn-secondary btn-sm" href="{% url 'dashboard-producto' %}">Cancelar</a>
+                        <input class="btn btn-sm text-white" type="submit" value="Guardar Cambios" style="background-color: #2E8B57; border-color: #2E8B57;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

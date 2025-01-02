@@ -7,55 +7,78 @@
 
 <div class="container">
     <div class="row my-4">
-        <div class="col-md-4">
-
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-3" style="background-color: #93aa93; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 20px;">
+                    <form method="GET" class="d-flex align-items-center">
+                        <label for="fecha" class="form-label fw-bold text-white me-3" style="font-size: 1.3rem;">Filtrar por fecha:</label>
+                        <select id="fecha" name="fecha" class="form-select me-3" style="width: 200px;" onchange="this.form.submit()">
+                            <option value="Todos" {% if not fecha_filtro or fecha_filtro == 'Todos' %}selected{% endif %}>Todos</option>
+                            <option value="Hoy" {% if fecha_filtro == 'Hoy' %}selected{% endif %}>Hoy</option>
+                            <option value="Este mes" {% if fecha_filtro == 'Este mes' %}selected{% endif %}>Este mes</option>
+                            <option value="Este año" {% if fecha_filtro == 'Este año' %}selected{% endif %}>Este año</option>
+                        </select>
+                        <input type="hidden" name="usuario" value="{{ usuario_filtro }}">
+                    </form>
+                    <form method="GET" class="d-flex align-items-center">
+                        <label for="usuario" class="form-label fw-bold text-white me-3" style="font-size: 1.3rem;">Filtrar por usuario:</label>
+                        <select id="usuario" name="usuario" class="form-select" style="width: 200px;" onchange="this.form.submit()">
+                            <option value="Todos" {% if not usuario_filtro or usuario_filtro == 'Todos' %}selected{% endif %}>Todos</option>
+                            {% for user in usuarios %}
+                                <option value="{{ user.id }}" {% if usuario_filtro == user.id|stringformat:"s" %}selected{% endif %}>{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="fecha" value="{{ fecha_filtro }}">
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-12">
+            {% if pedidos.exists %}
             <table class="table bg-white">
-                <thead class="bg-info">
-                    <tr class="text-white">
-                        <th scope="col">#</th>
-                        <th scope="col">Producto</th>
-                        <th scope="col">Categoria</th>
-                        <th scope="col">Cantidad</th>
+                <thead style="background-color: #2E8B57;" class="text-white">
+                    <tr>
+                        <th scope="col">Número Pedido</th>
                         <th scope="col">Pedido por</th>
+                        <th scope="col" class="text-center">Fecha</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for pedido in pedidos %}
                     <tr>
-                        <th scope="row">1</th>
-                        <td>Mark</td>
-                        <td>Otto</td>
-                        <td>@mdo</td>
+                        <td>{{ pedido.numero_pedido }}</td>
+                        <td>{{ pedido.usuario.username }}</td>
+                        <td class="text-center">{{ pedido.fecha|date:"d/m/y" }}</td>
                         <td>
-                            Broni
+                            <a 
+                                href="{% url 'dashboard-pedido-detalles' pedido.id %}" 
+                                class="btn btn-sm btn-info">
+                                Ver
+                            </a>
+                            <form 
+                                method="GET" 
+                                action="{% url 'dashboard-pedido-delete' pedido.id %}" 
+                                class="d-inline">
+                                <button 
+                                    type="submit" 
+                                    class="btn btn-sm btn-danger">
+                                    Eliminar
+                                </button>
+                            </form>
                         </td>
                     </tr>
-                    <tr>
-                        <th scope="row">2</th>
-                        <td>Jacob</td>
-                        <td>Thornton</td>
-                        <td>@jack</td>
-                        <td>
-                            Kenneth
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">3</th>
-                        <td>Larry</td>
-                        <td>Lopez</td>
-                        <td>@twitter</td>
-                        <td>
-                            Cecilia
-                        </td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
+            {% else %}
+            <div class="alert alert-warning text-center mt-4">
+                No hay pedidos con los filtros seleccionados.
+            </div>
+            {% endif %}
         </div>
     </div>
-
 </div>
 
-
-    
 {% endblock %}
+

@@ -4,7 +4,8 @@ from user import views as user_view
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-
+from user.views import custom_logout 
+from dashboard import views
 """
 URL configuration for stockify project.
 
@@ -29,7 +30,11 @@ urlpatterns = [
     path ('register/', user_view.register, name= 'user-register'),
     path ('profile/', user_view.profile, name= 'user-profile'),
     path ('', auth_views.LoginView.as_view(template_name='user/login.html'), name= 'user-login'),
-    path('logout/', auth_views.LogoutView.as_view(template_name='user/logout.html'), name='user-logout'),
+    path('logout/', custom_logout, name='user-logout'), 
     path ('profile/update/', user_view.profile_update, name= 'user-profile-update'),
+    path('staff/delete/<int:pk>/', views.staff_delete, name='dashboard-staff-delete'),
+    path('pedidos/detalles/<int:pk>/', views.pedido_detalles, name='dashboard-pedido-detalles'),
+    path('pedidos/delete/<int:pk>/', views.pedido_delete, name='dashboard-pedido-delete'),
+
 
     ]

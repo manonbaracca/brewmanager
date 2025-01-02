@@ -1,37 +1,38 @@
 {% extends 'partials/base.html' %}
-{% block title %}Customer Page{% endblock %}
+{% block title %}Detalle del Cliente{% endblock %}
 
 {% block content %}
-<div class="row my-4">
-    <div class="col-md-4"></div>
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                Customer Detail Page
-            </div>
-            <div class="row p-3">
-                <div class="col-md-8">
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header text-white text-center" style="background-color: #2E8B57;">
+                    Detalle del Usuario
+                </div>
+                <div class="card-body bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">Información del Perfil</h4>
+                        <a class="btn btn-info btn-sm" href="{% url 'user-profile-update' %}">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                    </div>
+                    <hr>
                     <table class="table table-borderless">
-                        <thead>
-                            <span class="h4">Porfile Information</span class="h4">
-                            <a class="btn btn-info btn-sm float-right" href="{% url 'user-profile-update' %}">Edit</a>
-                            <hr>
-                        </thead>
                         <tbody>
                             <tr>
-                                <th scope="row">Name</th>
+                                <th scope="row">Nombre:</th>
                                 <td>{{ user.username }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Email</th>
+                                <th scope="row">Email:</th>
                                 <td>{{ user.email }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Phone</th>
+                                <th scope="row">Teléfono:</th>
                                 <td>{{ user.profile.telefono }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">Address</th>
+                                <th scope="row">Dirección:</th>
                                 <td>{{ user.profile.direccion }}</td>
                             </tr>
                         </tbody>
@@ -41,5 +42,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

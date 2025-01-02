@@ -1,26 +1,26 @@
 {% extends 'partials/base.html' %}
-{% block title %}Cliente Page{% endblock %}
+{% block title %}Actualizar Cliente{% endblock %}
 {% load crispy_forms_tags %}
 {% block content %}
-<div class="row my-4">
-    <div class="col-md-4"></div>
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                Cliente
-            </div>
-            <div class="row p-3">
-                <div class="col-md-8">
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header text-white text-center" style="background-color: #2E8B57;">
+                    Actualizar Información
+                </div>
+                <div class="card-body bg-light">
                     <form method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ user_form|crispy }}
                         {{ profile_form|crispy }}
-                        <input class="btn btn-info" type="submit" value="Update">
+                        <div class="text-center">
+                            <input class="btn btn-success btn-sm" type="submit" value="Actualizar">
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
