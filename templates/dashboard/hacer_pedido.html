@@ -17,7 +17,6 @@
     </div>
 
     <div class="row mt-4">
-        <!-- Selección de productos -->
         <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-header text-white" style="background-color: #2E8B57;">Hacer Pedido</div>
@@ -28,8 +27,10 @@
                             <label for="categoria">Filtrar por Categoría:</label>
                             <select name="categoria" id="categoria" class="form-control" style="border-color: #2E8B57;" onchange="document.getElementById('filtrar-form').submit();">
                                 <option value="Todos" {% if categoria_seleccionada == 'Todos' %}selected{% endif %}>Todos</option>
-                                {% for key, value in CATEGORY.items %}
-                                    <option value="{{ key }}" {% if categoria_seleccionada == key %}selected{% endif %}>{{ value }}</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" {% if categoria_seleccionada == categoria.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ categoria.nombre }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -57,7 +58,6 @@
             </div>
         </div>
 
-        <!-- Carrito -->
         <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-header text-white" style="background-color: #2E8B57;">Carrito de Compra</div>

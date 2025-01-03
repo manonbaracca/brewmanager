@@ -12,6 +12,7 @@ urlpatterns = [
     path('pedidos/', views.listado_pedidos, name='dashboard-pedido'),  
     path('hacer-pedido/', views.hacer_pedido, name='dashboard-hacer-pedido'),  
     path('logout/', custom_logout, name='user-logout'),  
+    path('ver-logs/', views.ver_logs, name='ver-logs'),
 
 ]
 

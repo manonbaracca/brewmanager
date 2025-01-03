@@ -6,6 +6,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from user.views import custom_logout 
 from dashboard import views
+from user.views import ajustes_categorias, agregar_categoria, editar_categoria
+
+
+
 """
 URL configuration for stockify project.
 
@@ -35,6 +39,15 @@ urlpatterns = [
     path('staff/delete/<int:pk>/', views.staff_delete, name='dashboard-staff-delete'),
     path('pedidos/detalles/<int:pk>/', views.pedido_detalles, name='dashboard-pedido-detalles'),
     path('pedidos/delete/<int:pk>/', views.pedido_delete, name='dashboard-pedido-delete'),
+    path('ajustes/', user_view.ajustes, name='ajustes'),
+    path('ajustes/categorias/', ajustes_categorias, name='ajustes-categorias'),
+    path('ajustes/categorias/agregar/', agregar_categoria, name='agregar-categoria'),
+    path('ajustes/categorias/editar/<int:categoria_id>/', editar_categoria, name='editar-categoria'),
+    path('ajustes/categoria/eliminar/<int:pk>/', user_view.eliminar_categoria, name='eliminar-categoria'),
+
+]
 
 
-    ]
+
+
+

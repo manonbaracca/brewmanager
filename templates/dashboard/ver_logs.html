@@ -1,0 +1,26 @@
+{% extends 'partials/base.html' %}
+{% block title %} Logs del Sistema {% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h3 class="text-center">Historial de Actividades</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Log</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td>No se encontraron logs.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

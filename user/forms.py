@@ -21,3 +21,8 @@ class ProfileUpdateForm (forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['direccion', 'telefono']
+
+
+
+class CategoriaForm(forms.Form):
+    categoria = forms.CharField(label='Nueva Categoría', max_length=100, required=True)

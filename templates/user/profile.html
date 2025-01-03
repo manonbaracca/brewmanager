@@ -3,6 +3,13 @@
 
 {% block content %}
 <div class="container my-5">
+    {% if user.is_superuser %}
+    <div class="row mb-3">
+        <div class="col text-center">
+            <a href="{% url 'ajustes' %}" class="btn btn-primary btn-lg">Ajustes</a>
+        </div>
+    </div>
+    {% endif %}
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">

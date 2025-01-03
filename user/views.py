@@ -1,11 +1,15 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from .forms import CrearUserForm, ProfileUpdateForm, UserUpdateForm
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+from dashboard.models import Producto, Categoria, PedidoDetalle
+from .forms import CategoriaForm
 
-# Create your views here.
+
+
+
 def register (request):
     if request.method == 'POST':
         form =CrearUserForm(request.POST)
@@ -48,4 +52,59 @@ def custom_logout(request):
     list(messages.get_messages(request))
     logout(request)
     messages.success(request, "Has cerrado sesión exitosamente.")
-    return redirect('user-login')  
+    return redirect('user-login') 
+
+
+
+@login_required
+def ajustes(request):
+    return render(request, 'user/ajustes.html')
+
+@login_required
+def ajustes_categorias(request):
+    categorias = Categoria.objects.all()
+    return render(request, 'user/ajustes_categorias.html', {'categorias': categorias})
+
+@login_required
+def agregar_categoria(request):
+    if request.method == 'POST':
+        nueva_categoria = request.POST.get('nueva_categoria')
+        if Categoria.objects.filter(nombre=nueva_categoria).exists():
+            messages.error(request, 'La categoría ya existe.')
+        else:
+            Categoria.objects.create(nombre=nueva_categoria)
+            messages.success(request, f'Categoría "{nueva_categoria}" agregada exitosamente.')
+        return redirect('ajustes-categorias')
+
+
+
+@login_required
+def editar_categoria(request, categoria_id):
+    categoria = get_object_or_404(Categoria, id=categoria_id)
+    if request.method == 'POST':
+        nuevo_nombre = request.POST.get('nueva_categoria')
+        if Categoria.objects.filter(nombre=nuevo_nombre).exclude(id=categoria.id).exists():
+            messages.error(request, 'Ya existe una categoría con ese nombre.')
+        else:
+            categoria.nombre = nuevo_nombre
+            categoria.save()
+            messages.success(request, f'Categoría actualizada a "{nuevo_nombre}".')
+        return redirect('ajustes-categorias')
+
+@login_required
+def eliminar_categoria(request, pk):
+    categoria = get_object_or_404(Categoria, id=pk)
+
+    productos_asociados = Producto.objects.filter(categoria=categoria)
+    if productos_asociados.exists():
+        messages.error(request, f"No puedes eliminar la categoría '{categoria.nombre}' porque tiene productos asociados.")
+        return redirect('ajustes-categorias')
+
+    pedidos_asociados = PedidoDetalle.objects.filter(producto__categoria=categoria)
+    if pedidos_asociados.exists():
+        messages.error(request, f"No puedes eliminar la categoría '{categoria.nombre}' porque hay pedidos asociados.")
+        return redirect('ajustes-categorias')
+
+    categoria.delete()
+    messages.success(request, f"La categoría '{categoria.nombre}' se eliminó correctamente.")
+    return redirect('ajustes-categorias')

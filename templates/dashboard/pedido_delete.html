@@ -9,10 +9,7 @@
     <form method="POST">
         {% csrf_token %}
         <div class="text-center">
-            <!-- Botón para eliminar el pedido -->
             <button type="submit" class="btn btn-danger">Eliminar Pedido</button>
-            
-            <!-- Botón para volver -->
             {% if user.is_superuser %}
                 <a href="{% url 'dashboard-pedido' %}" class="btn btn-secondary">Volver</a>
             {% else %}

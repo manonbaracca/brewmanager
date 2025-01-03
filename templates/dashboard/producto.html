@@ -1,10 +1,9 @@
 {% extends 'partials/base.html'%}
-{% block title%} Productos {% endblock %}
+{% block title%}Productos{% endblock %}
 {% load crispy_forms_tags %}
 {% block content %}
 
 {% include 'partials/topnav.html' %}
-
 {% if messages %}
     <div class="container my-3">
         {% for message in messages %}
@@ -26,25 +25,25 @@
 
 <div class="container">
     <div class="row my-4">
-<div class="container">
-    <div class="row my-8">
-        <div class="col-md-8 offset-md-4 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-3" style="background-color: #93aa93;">
-                    <form method="GET" class="d-flex align-items-center">
-                        <label for="categoria" class="form-label fw-bold text-white me-3" style="font-size: 1.3rem; margin-right: 60px;">Filtrar por categoría:</label>
-                        <select id="categoria" name="categoria" class="form-select me-3" style="width: 300px;" onchange="this.form.submit()">
-                            <option value="Todos" {% if categoria_seleccionada == 'Todos' %}selected{% endif %}>Todas las categorías</option>
-                            {% for key, value in categorias_disponibles %}
-                                <option value="{{ key }}" {% if categoria_seleccionada == key %}selected{% endif %}>{{ value }}</option>
-                            {% endfor %}
-                        </select>
-                    </form>
+        <div class="container">
+            <div class="row my-8">
+                <div class="col-md-8 offset-md-4 mb-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-3" style="background-color: #93aa93;">
+                            <form method="GET" class="d-flex align-items-center">
+                                <label for="categoria" class="form-label fw-bold text-white me-3" style="font-size: 1.3rem; margin-right: 60px;">Filtrar por categoría:</label>
+                                <select id="categoria" name="categoria" class="form-select me-3" style="width: 300px;" onchange="this.form.submit()">
+                                    <option value="Todos" {% if categoria_seleccionada == 'Todos' %}selected{% endif %}>Todas las categorías</option>
+                                    {% for categoria in categorias_disponibles %}
+                                        <option value="{{ categoria.id }}" {% if categoria_seleccionada == categoria.id %}selected{% endif %}>{{ categoria.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
@@ -80,7 +79,7 @@
                             {% for item in items %}
                             <tr class="text-center">
                                 <td>{{ item.nombre }}</td>
-                                <td>{{ item.categoria }}</td>
+                                <td>{{ item.categoria.nombre }}</td>
                                 <td>{{ item.cantidad }}</td>
                                 <td>
                                     <a class="btn btn-info btn-sm" href="{% url 'dashboard-producto-update' item.id %}">Editar</a>
@@ -101,6 +100,3 @@
 </div>
 
 {% endblock %}
-ChatGPT dijo:
-ChatGPT
-edición

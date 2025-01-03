@@ -2,18 +2,21 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
-CATEGORY_CHOICES = [
-    ('Libreria', 'Libreria'),
-    ('Electronicos', 'Electrónicos'),
-    ('Alimentos', 'Alimentos'),
-]
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
 
 class Producto(models.Model):
     nombre = models.CharField(max_length=100, null=False, unique=True)  
-    categoria = models.CharField(max_length=20, choices=CATEGORY_CHOICES, null=False)  
-    cantidad = models.PositiveIntegerField(default=0) 
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)  
+    cantidad = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return f'{self.nombre} ({self.categoria}) - Stock: {self.cantidad}'
+
 
 class Pedido(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -30,6 +33,7 @@ class Pedido(models.Model):
     def __str__(self):
         return f'{self.numero_pedido} - {self.usuario.username} - {self.fecha.strftime("%Y-%m-%d")}'
 
+
 class PedidoDetalle(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="detalles")
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
@@ -37,5 +41,3 @@ class PedidoDetalle(models.Model):
 
     def __str__(self):
         return f'{self.pedido.numero_pedido} - {self.producto.nombre} x {self.cantidad}'
-
-

@@ -7,7 +7,6 @@
 
 <div class="container my-5">
     <div class="row gy-4">
-<!-- Pie Chart -->
 <div class="col-md-6">
     <div class="card shadow-sm">
         <div class="card-header text-white text-center" style="background-color: #2E8B57;">
@@ -53,7 +52,6 @@
 </div>
 
 
-<!-- Bar Chart -->
 <div class="col-md-6">
     <div class="card shadow-sm">
         <div class="card-header text-white text-center" style="background-color: #2E8B57;">
@@ -66,10 +64,10 @@
                 var myChart2 = new Chart(ctx2, {
                     type: 'bar',
                     data: {
-                        labels: [{% for producto in productos %} '{{ producto.nombre }}'{% if not forloop.last %}, {% endif %}{% endfor %}], // Nombres de los productos
+                        labels: [{% for producto in productos %} '{{ producto.nombre }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
                         datasets: [{
-                            label: 'Stock', // Cambié el texto para representar los datos correctamente
-                            data: [{% for producto in productos %}{{ producto.cantidad }}{% if not forloop.last %}, {% endif %}{% endfor %}], // Cantidad de cada producto
+                            label: 'Stock', 
+                            data: [{% for producto in productos %}{{ producto.cantidad }}{% if not forloop.last %}, {% endif %}{% endfor %}], 
                             backgroundColor: [
                                 'rgba(255, 99, 132, 0.8)',
                                 'rgba(54, 162, 235, 0.8)',
