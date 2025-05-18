@@ -6,7 +6,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from dashboard.models import Producto, Categoria, PedidoDetalle
 from .forms import CategoriaForm
-
+from django.contrib.auth.views import LoginView
 
 
 
@@ -108,3 +108,11 @@ def eliminar_categoria(request, pk):
     categoria.delete()
     messages.success(request, f"La categoría '{categoria.nombre}' se eliminó correctamente.")
     return redirect('ajustes-categorias')
+
+class CustomLoginView(LoginView):
+    template_name = 'user/login.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('dashboard-index')
+        return super().dispatch(request, *args, **kwargs)

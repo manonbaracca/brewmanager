@@ -15,13 +15,13 @@ function App() {
       <img 
         src="/static/img/logo.png" 
         alt="Logo" 
-        style={{ width: 400, marginBottom: 40 }} 
+        style={{ width: 300, marginBottom: 40 }}
       />
 
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Bienvenido </h1>
+      <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Bienvenido</h1> 
 
       <div style={{ display: 'flex', gap: '1.5rem' }}>
-        <a href="/login/" style={linkStyle}>Iniciar Sesión</a>
+        <a href="/" style={linkStyle}>Iniciar Sesión</a>
         <a href="/register/" style={linkStyle}>Registrarse</a>
       </div>
     </div>

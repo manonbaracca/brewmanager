@@ -1,0 +1,11 @@
+{% extends 'partials/base.html' %}
+{% load vite_asset %}
+{% block title %} Dashboard {% endblock %}
+{% block content %}
+
+  {% include 'partials/topnav.html' %}
+
+  <div id="root"></div>
+
+  {% vite_asset 'src/main.jsx' %}
+{% endblock %}

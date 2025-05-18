@@ -19,6 +19,8 @@ from django.conf import settings
 
 logger = logging.getLogger('app_logger')
 
+def home(request):
+    return render(request, 'dashboard/home.html')
 
 @login_required
 def index(request):

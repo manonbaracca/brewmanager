@@ -3,15 +3,17 @@ from django.urls import path, include
 from user import views as user_view
 from django.contrib.auth import views as auth_views
 from django.conf import settings
+from user.views import CustomLoginView
 from django.conf.urls.static import static
 from user.views import custom_logout 
 from dashboard import views
+from dashboard.views import home
 from user.views import ajustes_categorias, agregar_categoria, editar_categoria
 
 
 
 """
-URL configuration for stockify project.
+URL configuration for brewmanager project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -31,9 +33,10 @@ Including another URLconf
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('dashboard.urls')),
-    path ('register/', user_view.register, name= 'user-register'),
+    path('login/', CustomLoginView.as_view(), name='user-login'),
+    path('register/', user_view.register, name='user-register'),
+    path('', home, name='home'),  
     path ('profile/', user_view.profile, name= 'user-profile'),
-    path ('', auth_views.LoginView.as_view(template_name='user/login.html'), name= 'user-login'),
     path('logout/', custom_logout, name='user-logout'), 
     path ('profile/update/', user_view.profile_update, name= 'user-profile-update'),
     path('staff/delete/<int:pk>/', views.staff_delete, name='dashboard-staff-delete'),
