@@ -3,50 +3,119 @@
 
 {% block content %}
 <div class="container my-5">
-    {% if user.is_superuser %}
-    <div class="row mb-3">
-        <div class="col text-center">
-            <a href="{% url 'ajustes' %}" class="btn btn-primary btn-lg">Ajustes</a>
-        </div>
+  {% if user.is_superuser %}
+    <div class="row mb-4">
+      <div class="col text-center">
+        <a
+          href="{% url 'ajustes' %}"
+          class="btn"
+          style="
+            background-color: #8B4513;
+            color: #FFF;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            font-weight: 600;
+          "
+        >
+          Ajustes
+        </a>
+      </div>
     </div>
-    {% endif %}
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header text-white text-center" style="background-color: #2E8B57;">
-                    Detalle del Usuario
-                </div>
-                <div class="card-body bg-light">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0">Información del Perfil</h4>
-                        <a class="btn btn-info btn-sm" href="{% url 'user-profile-update' %}">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
-                    </div>
-                    <hr>
-                    <table class="table table-borderless">
-                        <tbody>
-                            <tr>
-                                <th scope="row">Nombre:</th>
-                                <td>{{ user.username }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Email:</th>
-                                <td>{{ user.email }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Teléfono:</th>
-                                <td>{{ user.profile.telefono }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Dirección:</th>
-                                <td>{{ user.profile.direccion }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  {% endif %}
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0" style="border-radius: 10px; overflow: hidden;">
+        <div
+          class="card-header text-center"
+          style="
+            background-color: #8B4513;
+            color: #FAF0E6;
+            font-weight: 700;
+            font-size: 1.3rem;
+          "
+        >
+          Detalle del Usuario
         </div>
+        <div
+          class="card-body"
+          style="background-color: #F5DEB3; color: #5A2E1B; padding: 2rem;"
+        >
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0" style="font-weight:600;">Información del Perfil</h4>
+            <a
+              href="{% url 'user-profile-update' %}"
+              class="btn btn-sm"
+              style="
+                background-color: #5A2E1B;
+                color: #FFF;
+                font-weight: 500;
+              "
+            >
+              <i class="fas fa-edit"></i> Editar
+            </a>
+          </div>
+          <hr style="border-color: #8B4513;">
+
+          <table
+            class="table table-borderless mb-0 w-100"
+            style="background: transparent !important;"
+          >
+            <tbody style="background: transparent !important;">
+              <tr style="background: transparent !important;">
+                <th
+                  scope="row"
+                  style="
+                    width: 30%;
+                    font-weight: 600;
+                    background: transparent !important;
+                  "
+                >
+                  Nombre:
+                </th>
+                <td style="background: transparent !important;">
+                  {{ user.username }}
+                </td>
+              </tr>
+              <tr style="background: transparent !important;">
+                <th
+                  scope="row"
+                  style="font-weight: 600; background: transparent !important;"
+                >
+                  Email:
+                </th>
+                <td style="background: transparent !important;">
+                  {{ user.email }}
+                </td>
+              </tr>
+              <tr style="background: transparent !important;">
+                <th
+                  scope="row"
+                  style="font-weight: 600; background: transparent !important;"
+                >
+                  Teléfono:
+                </th>
+                <td style="background: transparent !important;">
+                  {{ user.profile.telefono }}
+                </td>
+              </tr>
+              <tr style="background: transparent !important;">
+                <th
+                  scope="row"
+                  style="font-weight: 600; background: transparent !important;"
+                >
+                  Dirección:
+                </th>
+                <td style="background: transparent !important;">
+                  {{ user.profile.direccion }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
+

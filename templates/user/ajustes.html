@@ -1,21 +1,31 @@
 {% extends 'partials/base.html' %}
-{% block title %} Ajustes {% endblock %}
+{% block title %}Ajustes{% endblock %}
 
 {% block content %}
 <div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header text-white text-center" style="background-color: #2E8B57;">
-                    Ajustes del Sistema
-                </div>
-                <div class="card-body text-center">
-                    <p class="mb-4">Seleccione una opción para gestionar:</p>
-                    <a href="{% url 'ajustes-categorias' %}" class="btn btn-primary btn-lg mb-3">Categorías</a>
-                    <a href="{% url 'ver-logs' %}" class="btn btn-secondary btn-lg mb-3">Logs</a>
-                </div>
-            </div>
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0" style="border-radius: 10px; overflow: hidden;">
+        <div class="card-header text-center" style="background-color: #8B4513; color: #FAF0E6; font-weight: bold; font-size: 1.25rem;">
+          Ajustes del Sistema
         </div>
+        <div class="card-body" style="background-color: #F5DEB3;">
+          <p class="mb-4" style="color: #5A2E1B; font-size: 1.1rem;">Seleccione una opción para gestionar:</p>
+          <div class="d-flex flex-column align-items-center gap-3">
+            <a href="{% url 'ajustes-categorias' %}"
+               class="btn btn-lg"
+               style="background-color: #5A2E1B; color: #FFF; padding: 0.75rem 1.5rem; width: 100%; border-radius: 5px;">
+              Categorías
+            </a>
+            <a href="{% url 'ver-logs' %}"
+               class="btn btn-lg"
+               style="background-color: #A0522D; color: #FFF; padding: 0.75rem 1.5rem; width: 100%; border-radius: 5px;">
+              Logs
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
