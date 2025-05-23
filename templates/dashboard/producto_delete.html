@@ -1,29 +1,83 @@
 {% extends 'partials/base.html' %}
-{% block title %} Borrar Producto {% endblock %}
+{% block title %}Borrar Producto{% endblock %}
 
 {% block content %}
+<div class="container my-5">
 
-<div class="row my-4">
-    <div class="col-md-6 offset-md-3">
-        <div class="card shadow-sm">
-            <div class="card-header text-white text-center" style="background-color: #2E8B57;">
-                Confirmar Eliminación
-            </div>
-            <div class="card-body bg-light">
-                <div class="alert alert-danger text-center">
-                    <h5><i class="fas fa-exclamation-triangle"></i> ¿Estás seguro que deseas eliminar el producto <strong>{{ item.nombre }}</strong>?</h5>
-                </div>
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form }}
-                    <div class="d-flex justify-content-between mt-4">
-                        <a class="btn btn-secondary btn-sm" href="{% url 'dashboard-producto' %}">Cancelar</a>
-                        <input class="btn btn-danger btn-sm" type="submit" value="Confirmar">
-                    </div>
-                </form>
-            </div>
+  {% if messages %}
+    <div class="container my-3">
+      {% for message in messages %}
+        <div
+          class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} shadow-lg p-4 mb-4 rounded"
+          style="border: 2px solid #5A2E1B; background-color: #F5FFF5;"
+          role="alert"
+        >
+          <h5 class="font-weight-bold text-center mb-0">
+            {% if message.tags == 'success' %}
+              <i class="fas fa-check-circle"></i>
+            {% elif message.tags == 'error' %}
+              <i class="fas fa-exclamation-triangle"></i>
+            {% else %}
+              <i class="fas fa-info-circle"></i>
+            {% endif %}
+            {{ message }}
+          </h5>
         </div>
+      {% endfor %}
     </div>
-</div>
+  {% endif %}
 
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0" style="border-radius: 10px; overflow: hidden;">
+        <div
+          class="card-header text-center text-white"
+          style="background-color: #5A2E1B; font-weight: bold; font-size: 1.25rem;"
+        >
+          Confirmar Eliminación
+        </div>
+        <div class="card-body" style="background-color: #F5DEB3;">
+          <div class="alert alert-danger text-center mb-4" style="background-color: #FADBD8; border-color: #C0392B;">
+            <h5 class="mb-0">
+              <i class="fas fa-exclamation-triangle"></i>
+              ¿Estás seguro que deseas eliminar
+              <strong>{{ item.nombre }}</strong>?
+              <br>
+              <small class="text-muted">Esta acción no se puede deshacer.</small>
+            </h5>
+          </div>
+          <form method="POST">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between">
+              <a
+                href="{% url 'dashboard-producto' %}"
+                class="btn"
+                style="
+                  background-color: #FAF0E6;
+                  color: #5A2E1B;
+                  border: 1px solid #5A2E1B;
+                  padding: 0.5rem 1rem;
+                  border-radius: 5px;
+                "
+              >
+                Cancelar
+              </a>
+              <button
+                type="submit"
+                class="btn text-white"
+                style="
+                  background-color: #8B4513;
+                  padding: 0.5rem 1.5rem;
+                  border-radius: 5px;
+                "
+              >
+                Confirmar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -95,71 +95,82 @@ def staff_detalles(request, pk):
 @login_required
 def producto(request):
     trabajadores_count = User.objects.filter(is_superuser=False).count()
-    pedidos_count = Pedido.objects.all().count()
-    product_count = Producto.objects.all().count()
+    pedidos_count = Pedido.objects.count()
+    product_count = Producto.objects.count()
     productos_sin_stock = Producto.objects.filter(cantidad=0)
-    categoria_id = request.GET.get('categoria', 'Todos') 
 
- 
-    if categoria_id != 'Todos':
-        items = Producto.objects.filter(categoria_id=categoria_id) 
-    else:
+    categorias_disponibles = Categoria.objects.all()
+    raw = request.GET.get('categoria', 'Todos')
+
+    if raw == 'Todos':
         items = Producto.objects.all()
-    categoria_id = request.GET.get('categoria', 'Todos') 
+        categoria_seleccionada = 'Todos'
+    else:
+        try:
+            cat_id = int(raw)
+            items = Producto.objects.filter(categoria_id=cat_id)
+            categoria_seleccionada = cat_id
+        except (ValueError, Categoria.DoesNotExist):
+            items = Producto.objects.all()
+            categoria_seleccionada = 'Todos'
+
     if request.method == 'POST':
         form = ProductoForm(request.POST)
         if form.is_valid():
-            nombre = form.cleaned_data['nombre']
-            if Producto.objects.filter(nombre=nombre).exists():  
-                messages.error(request, 'Ya existe un producto con ese nombre.')
+            cantidad = form.cleaned_data['cantidad']
+            if cantidad < 1:
+                form.add_error('cantidad', 'La cantidad debe ser al menos 1.')
             else:
-                form.save()
-                logger.info(f"Nuevo producto agregado: {nombre}.")
-
-                messages.success(request, 'Producto agregado exitosamente.')
-                return redirect('dashboard-producto')
+                producto = form.save()
+                messages.success(request, f'Producto "{producto.nombre}" agregado correctamente.')
+                return redirect(f"{request.path}?categoria={raw}")
     else:
         form = ProductoForm()
 
-    categorias_disponibles = Categoria.objects.all()  
-
-    context = {
-        'items': items,
-        'form': form,
+    return render(request, 'dashboard/producto.html', {
         'trabajadores_count': trabajadores_count,
         'pedidos_count': pedidos_count,
         'product_count': product_count,
         'productos_sin_stock': productos_sin_stock,
         'categorias_disponibles': categorias_disponibles,
-        'categoria_seleccionada': categoria_id,
-    }
-    return render(request, 'dashboard/producto.html', context)
+        'items': items,
+        'categoria_seleccionada': categoria_seleccionada,
+        'form': form,
+    })
+
 
 @login_required
 def producto_delete(request, pk):
-    item = Producto.objects.get(id=pk)
-    if request.method =='POST':
+    item = get_object_or_404(Producto, pk=pk)
+    if request.method == 'POST':
         item.delete()
+        messages.success(request, f'Producto "{item.nombre}" eliminado.')
         return redirect('dashboard-producto')
-    return render(request, 'dashboard/producto_delete.html')
+    return render(request, 'dashboard/producto_delete.html', {
+        'item': item
+    })
 
 @login_required
 def producto_update(request, pk):
-    item = Producto.objects.get(id=pk)
+    item = get_object_or_404(Producto, pk=pk)
 
-    if request.method =='POST':
+    if request.method == 'POST':
         form = ProductoForm(request.POST, instance=item)
         if form.is_valid():
-            form.save()
-            return redirect ('dashboard-producto')
+            cantidad = form.cleaned_data['cantidad']
+            if cantidad < 1:
+                form.add_error('cantidad', 'La cantidad debe ser al menos 1.')
+            else:
+                form.save()
+                messages.success(request, f'Producto "{item.nombre}" actualizado correctamente.')
+                return redirect('dashboard-producto')
     else:
         form = ProductoForm(instance=item)
-    context={
+
+    return render(request, 'dashboard/producto_update.html', {
         'form': form,
-    }
-    return render(request, 'dashboard/producto_update.html', context)
-
-
+        'item': item,
+    })
 
 @login_required
 def listado_pedidos(request):
