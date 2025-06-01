@@ -4,13 +4,24 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/api-auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    }
   },
   resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
+    alias: { '@': resolve(__dirname, 'src') }
   },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
+  }
 })

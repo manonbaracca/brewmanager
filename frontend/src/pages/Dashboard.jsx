@@ -1,110 +1,42 @@
-// src/pages/Dashboard.jsx
-import { useEffect, useRef } from 'react'
-import Chart from 'chart.js/auto'
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
+import TopNav from '@/components/TopNav'
 
-function Dashboard({ productos, productosLabels, productosCantidades }) {
-  const pedidosChartRef = useRef(null)
-  const stockChartRef = useRef(null)
+export default function Dashboard() {
+  const [productosSinStock, setProductosSinStock] = useState([])
+  const [stats, setStats] = useState({
+    trabajadoresCount: 0,
+    productCount: 0,
+    pedidosCount: 0
+  })
 
   useEffect(() => {
-    const ctx1 = pedidosChartRef.current.getContext('2d')
-    new Chart(ctx1, {
-      type: 'pie',
-      data: {
-        labels: productosLabels,
-        datasets: [{
-          label: 'Pedidos',
-          data: productosCantidades,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-            'rgba(255, 159, 64, 0.8)'
-          ],
-          borderColor: 'rgba(255, 255, 255, 1)',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: '#333'
-            }
-          }
-        }
-      }
-    })
+    axios.get('/api/productos/?cantidad=0')
+      .then(res => setProductosSinStock(res.data))
+      .catch(console.error)
 
-    const ctx2 = stockChartRef.current.getContext('2d')
-    new Chart(ctx2, {
-      type: 'bar',
-      data: {
-        labels: productos.map(p => p.nombre),
-        datasets: [{
-          label: 'Stock',
-          data: productos.map(p => p.cantidad),
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 206, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
-            'rgba(255, 159, 64, 0.8)'
-          ],
-          borderColor: 'rgba(255, 255, 255, 1)',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: '#333'
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: {
-              color: 'rgba(200, 200, 200, 0.2)'
-            },
-            ticks: {
-              color: '#333'
-            }
-          },
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(200, 200, 200, 0.2)'
-            },
-            ticks: {
-              color: '#333'
-            }
-          }
-        }
-      }
-    })
-  }, [productos, productosLabels, productosCantidades])
+    Promise.all([
+      axios.get('/api/usuarios/count/'),   // crea estos endpoints en DRF
+      axios.get('/api/productos/count/'),
+      axios.get('/api/pedidos/count/')
+    ]).then(([r1, r2, r3]) => {
+      setStats({
+        trabajadoresCount: r1.data.count,
+        productCount:      r2.data.count,
+        pedidosCount:      r3.data.count
+      })
+    }).catch(console.error)
+  }, [])
 
   return (
-    <div className="dashboard-container" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-      <div>
-        <h2 style={{ textAlign: 'center', color: '#5A2E1B' }}>Pedidos por Producto</h2>
-        <canvas ref={pedidosChartRef} width="400" height="300"></canvas>
-      </div>
-      <div>
-        <h2 style={{ textAlign: 'center', color: '#5A2E1B' }}>Stock de Productos</h2>
-        <canvas ref={stockChartRef} width="400" height="300"></canvas>
-      </div>
+    <div>
+      <TopNav
+        productosSinStock={productosSinStock}
+        trabajadoresCount={stats.trabajadoresCount}
+        productCount={stats.productCount}
+        pedidosCount={stats.pedidosCount}
+      />
+      {/* resto del Dashboard */}
     </div>
   )
 }
-
-export default Dashboard
-

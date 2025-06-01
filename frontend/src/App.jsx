@@ -1,40 +1,52 @@
-import './App.css'
+
+import React from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Dashboard from './pages/Dashboard'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Profile from './pages/Profile'
+import ProfileUpdate from './pages/ProfileUpdate'
+import Logout from './pages/Logout'
+import Ajustes from './pages/Ajustes'
+import AjustesCategorias from './pages/AjustesCategorias'
+import Staff from './pages/Staff'
+import StaffDetail from './pages/StaffDetail'
+import StaffDelete from './pages/StaffDelete'
+import Orders        from './pages/Orders'
+import OrderDetail   from './pages/OrderDetail'
+import OrderDelete   from './pages/OrderDelete'
+import Products from './pages/Products'
+import ProductUpdate from './pages/ProductUpdate'
+import ProductDelete from './pages/ProductDelete'
 
 function App() {
   return (
-    <div style={{ 
-      backgroundColor: '#C47A47', 
-      color: '#5A2E1B', 
-      height: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <img 
-        src="/static/img/logo.png" 
-        alt="Logo" 
-        style={{ width: 300, marginBottom: 40 }}
-      />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/update" element={<ProfileUpdate />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/ajustes" element={<Ajustes />} />
+        <Route path="/ajustes/categorias" element={<AjustesCategorias />} />
+        <Route path="/staff" element={<Staff />} />
+        <Route path="/staff/:id" element={<StaffDetail />} />
+        <Route path="/staff/delete/:id" element={<StaffDelete />} />
+        <Route path="/pedidos"               element={<Orders />} />
+        <Route path="/pedidos/:id"           element={<OrderDetail />} />
+        <Route path="/pedidos/delete/:id"    element={<OrderDelete />} />
+        <Route path="/producto" element={<Products />} />
+        <Route path="/producto/update/:id" element={<ProductUpdate />} />
+        <Route path="/producto/delete/:id" element={<ProductDelete />} />
 
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Bienvenido</h1> 
-
-      <div style={{ display: 'flex', gap: '1.5rem' }}>
-        <a href="/" style={linkStyle}>Iniciar Sesión</a>
-        <a href="/register/" style={linkStyle}>Registrarse</a>
-      </div>
-    </div>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
-const linkStyle = {
-  backgroundColor: '#5A2E1B',
-  color: '#fff',
-  padding: '0.75rem 1.5rem',
-  textDecoration: 'none',
-  borderRadius: '5px',
-  fontWeight: 'bold'
-}
-
 export default App
+

@@ -1,56 +1,30 @@
 from django.contrib import admin
-from django.urls import path, include
-from user import views as user_view
-from django.contrib.auth import views as auth_views
-from django.conf import settings
-from user.views import CustomLoginView
-from django.conf.urls.static import static
-from user.views import custom_logout 
-from dashboard import views
+from django.urls import path, include, re_path
+from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
 from dashboard.views import home
-from user.views import ajustes_categorias, agregar_categoria, editar_categoria
+from dashboard.api_views import CategoriaViewSet, ProductoViewSet, PedidoViewSet
+from user.api_views import RegisterAPIView
+from django.views.generic import TemplateView
 
-
-
-"""
-URL configuration for brewmanager project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+router = DefaultRouter()
+router.register(r'categorias', CategoriaViewSet, basename='api-categorias')
+router.register(r'productos',  ProductoViewSet,   basename='api-productos')
+router.register(r'pedidos',     PedidoViewSet,     basename='api-pedidos')
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('user.urls')),
+    path('api/', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls')),  
+    path('api-token-auth/', obtain_auth_token, name='api-token-auth'),
     path('', include('dashboard.urls')),
-    path('login/', CustomLoginView.as_view(), name='user-login'),
-    path('register/', user_view.register, name='user-register'),
-    path('', home, name='home'),  
-    path ('profile/', user_view.profile, name= 'user-profile'),
-    path('logout/', custom_logout, name='user-logout'), 
-    path ('profile/update/', user_view.profile_update, name= 'user-profile-update'),
-    path('staff/delete/<int:pk>/', views.staff_delete, name='dashboard-staff-delete'),
-    path('pedidos/detalles/<int:pk>/', views.pedido_detalles, name='dashboard-pedido-detalles'),
-    path('pedidos/delete/<int:pk>/', views.pedido_delete, name='dashboard-pedido-delete'),
-    path('ajustes/', user_view.ajustes, name='ajustes'),
-    path('ajustes/categorias/', ajustes_categorias, name='ajustes-categorias'),
-    path('ajustes/categorias/agregar/', agregar_categoria, name='agregar-categoria'),
-    path('ajustes/categorias/editar/<int:categoria_id>/', editar_categoria, name='editar-categoria'),
-    path('ajustes/categoria/eliminar/<int:pk>/', user_view.eliminar_categoria, name='eliminar-categoria'),
-
+    
 ]
 
-
-
-
-
+urlpatterns += [
+  re_path(r'^(?!api/|admin/|static/|media/).*$',
+    TemplateView.as_view(template_name='index.html'),
+    name='spa'),
+]

@@ -1,52 +1,92 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .forms import CrearUserForm, ProfileUpdateForm, UserUpdateForm
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import logout, login
 from django.contrib.auth.decorators import login_required
 from dashboard.models import Producto, Categoria, PedidoDetalle
 from .forms import CategoriaForm
 from django.contrib.auth.views import LoginView
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import StaffSerializer
+
+@ensure_csrf_cookie
+def register_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'detail': 'Método no permitido'}, status=405)
+    form = CrearUserForm(request.POST)
+    if form.is_valid():
+        user = form.save()
+        token, _ = Token.objects.get_or_create(user=user)
+        return JsonResponse({'username': user.username, 'token': token.key}, status=201)
+    return JsonResponse(form.errors, status=400)
+
+
+@ensure_csrf_cookie
+def login_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'detail': 'Método no permitido'}, status=405)
+    form = AuthenticationForm(request, data=request.POST)
+    if form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)
+        return JsonResponse({'username': user.username, 'token': token.key})
+    return JsonResponse({'errors': form.errors}, status=400)
+
+
+@login_required
+def logout_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'detail': 'Método no permitido'}, status=405)
+    Token.objects.filter(user=request.user).delete()
+    logout(request)
+    return JsonResponse({'detail': 'Desconectado'})
+
+@login_required
+def profile_api(request):
+    p = request.user.profile
+    return JsonResponse({
+        'username': request.user.username,
+        'email': request.user.email,
+        'telefono': str(p.telefono) if p.telefono else '',
+        'direccion': p.direccion or '',
+        'is_superuser': request.user.is_superuser,
+    })
 
 
 
-def register (request):
-    if request.method == 'POST':
-        form =CrearUserForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            messages.success (request, f'Cuenta creada para {username}. Inicie Sesion')
-            return redirect ('user-login')
-    else: 
-        form =CrearUserForm()
+@ensure_csrf_cookie
+@login_required
+def profile_update_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'detail': 'Método no permitido'}, status=405)
 
-    context ={
-        'form': form
-    }
+    user_form    = UserUpdateForm(request.POST, instance=request.user)
+    profile_form = ProfileUpdateForm(request.POST, instance=request.user.profile)
 
-    return render(request, 'user/register.html', context)
-
-def profile (request):
-    return render (request, 'user/profile.html')
-
-def profile_update(request):
-    if request.method == 'POST':
-        user_form = UserUpdateForm (request.POST, instance=request.user)
-        profile_form =ProfileUpdateForm(request.POST, instance=request.user.profile)
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            return redirect('user-profile')
-    else:
-        user_form = UserUpdateForm (instance=request.user)
-        profile_form =ProfileUpdateForm(instance=request.user.profile)
-        
-    context={
-        'user_form': user_form,
-        'profile_form': profile_form,
-    }
-    return render (request, 'user/profile_update.html', context)
+    p = request.user.profile
+    if user_form.is_valid() and profile_form.is_valid():
+        user_form.save()
+        profile_form.save()
+        return JsonResponse({
+            'username':      request.user.username,
+            'email':         request.user.email,
+            'telefono':      str(p.telefono) if p.telefono else '',
+            'direccion':     p.direccion or '',
+            'is_superuser':  request.user.is_superuser,
+        })
+    errors = {}
+    errors.update(user_form.errors)
+    errors.update(profile_form.errors)
+    return JsonResponse(errors, status=400)
 
 def custom_logout(request):
     list(messages.get_messages(request))
@@ -109,10 +149,26 @@ def eliminar_categoria(request, pk):
     messages.success(request, f"La categoría '{categoria.nombre}' se eliminó correctamente.")
     return redirect('ajustes-categorias')
 
-class CustomLoginView(LoginView):
-    template_name = 'user/login.html'
+@login_required
+def current_user_api(request):
+    return JsonResponse({'username': request.user.username})
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            return redirect('dashboard-index')
-        return super().dispatch(request, *args, **kwargs)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def staff_list_api(request):
+
+    qs = User.objects.filter(is_superuser=False)
+    data = StaffSerializer(qs, many=True).data
+    return Response(data)
+
+
+@api_view(['GET','DELETE'])
+@permission_classes([IsAdminUser])
+def staff_detail_api(request, pk):
+    user = get_object_or_404(User, pk=pk, is_superuser=False)
+    if request.method == 'GET':
+        return Response(StaffSerializer(user).data)
+    else:  
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
