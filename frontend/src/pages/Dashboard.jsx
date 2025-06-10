@@ -1,42 +1,173 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
+import { Chart, registerables } from 'chart.js'
+import Base from '@/components/Base'
 import TopNav from '@/components/TopNav'
+Chart.register(...registerables)
 
 export default function Dashboard() {
   const [productosSinStock, setProductosSinStock] = useState([])
   const [stats, setStats] = useState({
     trabajadoresCount: 0,
     productCount: 0,
-    pedidosCount: 0
+    pedidosCount: 0,
   })
 
-  useEffect(() => {
-    axios.get('/api/productos/?cantidad=0')
-      .then(res => setProductosSinStock(res.data))
-      .catch(console.error)
+  const pieRef = useRef(null)
+  const barRef = useRef(null)
+  const pieChart = useRef(null)
+  const barChart = useRef(null)
 
+
+  const themeColors = [
+    '#8B4513', 
+    '#5A2E1B', 
+    '#C47A47', 
+    '#A0522D',
+    '#D2691E', 
+    '#8B0000', 
+  ]
+
+  const alpha = '80' 
+  const generateColors = n =>
+    Array.from({ length: n }, (_, i) => themeColors[i % themeColors.length] + alpha)
+
+  useEffect(() => {
     Promise.all([
-      axios.get('/api/usuarios/count/'),   // crea estos endpoints en DRF
-      axios.get('/api/productos/count/'),
-      axios.get('/api/pedidos/count/')
-    ]).then(([r1, r2, r3]) => {
+      axios.get('/api/staff/',     { withCredentials: true }),
+      axios.get('/api/productos/', { withCredentials: true }),
+      axios.get('/api/pedidos/',   { withCredentials: true }),
+    ]).then(([staffRes, prodRes, pedRes]) => {
+      const staff     = staffRes.data   || []
+      const productos = prodRes.data    || []
+      const pedidos   = pedRes.data     || []
+
       setStats({
-        trabajadoresCount: r1.data.count,
-        productCount:      r2.data.count,
-        pedidosCount:      r3.data.count
+        trabajadoresCount: staff.length,
+        productCount:      productos.length,
+        pedidosCount:      pedidos.length,
+      })
+      setProductosSinStock(productos.filter(p => p.cantidad === 0))
+
+      const barLabels = productos.map(p => p.nombre)
+      const barData   = productos.map(p => p.cantidad)
+      if (barChart.current) barChart.current.destroy()
+      barChart.current = new Chart(barRef.current, {
+        type: 'bar',
+        data: {
+          labels: barLabels,
+          datasets: [{
+            label: 'Stock',
+            data: barData,
+            backgroundColor: generateColors(barLabels.length),
+            borderRadius: 8,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          animation: { duration: 800, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              padding: 8,
+              titleFont: { size: 14 },
+              bodyFont:  { size: 12 },
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#5A2E1B', font: { weight: 'bold' } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { color: '#5A2E1B' }
+            }
+          }
+        }
+      })
+
+      const acc = {}
+      pedidos.forEach(p =>
+        p.detalles.forEach(d =>
+          acc[d.producto.nombre] = (acc[d.producto.nombre] || 0) + d.cantidad
+        )
+      )
+      const pieLabels = Object.keys(acc)
+      const pieData   = Object.values(acc)
+      if (pieChart.current) pieChart.current.destroy()
+      pieChart.current = new Chart(pieRef.current, {
+        type: 'pie',
+        data: {
+          labels: pieLabels,
+          datasets: [{
+            data: pieData,
+            backgroundColor: generateColors(pieLabels.length),
+            hoverOffset: 8,
+          }]
+        },
+        options: {
+          animation: { duration: 700 },
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#5A2E1B', boxWidth: 12, padding: 16 }
+            },
+            tooltip: {
+              padding: 8,
+              titleFont: { size: 14 },
+              bodyFont:  { size: 12 },
+            }
+          }
+        }
       })
     }).catch(console.error)
   }, [])
 
   return (
-    <div>
+    <Base title="Dashboard">
       <TopNav
         productosSinStock={productosSinStock}
         trabajadoresCount={stats.trabajadoresCount}
         productCount={stats.productCount}
         pedidosCount={stats.pedidosCount}
       />
-      {/* resto del Dashboard */}
-    </div>
+
+      <div className="container my-5">
+        <div className="row gy-4">
+
+          <div className="col-md-6">
+            <div className="card shadow-sm">
+              <div
+                className="card-header text-white text-center"
+                style={{ backgroundColor: themeColors[0] }}
+              >
+                Pedidos por Producto
+              </div>
+              <div className="card-body">
+                <canvas ref={pieRef} />
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-6">
+            <div className="card shadow-sm">
+              <div
+                className="card-header text-white text-center"
+                style={{ backgroundColor: themeColors[1] }}
+              >
+                Stock de Productos
+              </div>
+              <div className="card-body">
+                <canvas ref={barRef} />
+              </div>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+    </Base>
   )
 }
+

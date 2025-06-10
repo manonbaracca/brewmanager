@@ -5,31 +5,37 @@ import logo from '@/static/img/logo.png'
 
 export default function Home() {
   const navigate = useNavigate()
-  const [loggedIn, setLoggedIn] = useState(null) 
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     axios.get('/api/user/', { withCredentials: true })
-      .then(() => setLoggedIn(true))
-      .catch(() => setLoggedIn(false))
+      .then(res => setUser(res.data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
   }, [])
 
-  const handleLoginClick = () => {
-    if (loggedIn) {
-      navigate('/dashboard')
-    } else {
+  const goToDashboard = () => {
+
+    if (!user) {
       navigate('/login')
+      return
     }
+
+    const target = user.is_superuser ? '/dashboard' : '/staff-index'
+    navigate(target)
   }
 
-  const handleRegisterClick = () => {
-    if (loggedIn) {
-      navigate('/dashboard')
-    } else {
+  const goToRegister = () => {
+    if (!user) {
       navigate('/register')
+      return
     }
+    const target = user.is_superuser ? '/dashboard' : '/staff-index'
+    navigate(target)
   }
 
-  if (loggedIn === null) {
+  if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
         <p>Cargando…</p>
@@ -71,10 +77,10 @@ export default function Home() {
       </h1>
 
       <div style={{ display: 'flex', gap: '1.5rem' }}>
-        <button onClick={handleLoginClick} style={linkStyle}>
+        <button onClick={goToDashboard} style={linkStyle}>
           Iniciar Sesión
         </button>
-        <button onClick={handleRegisterClick} style={linkStyle}>
+        <button onClick={goToRegister} style={linkStyle}>
           Registrarse
         </button>
       </div>

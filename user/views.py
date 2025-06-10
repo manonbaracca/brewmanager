@@ -52,12 +52,12 @@ def logout_api(request):
 
 @login_required
 def profile_api(request):
-    p = request.user.profile
     return JsonResponse({
+        'id':       request.user.id,        
         'username': request.user.username,
-        'email': request.user.email,
-        'telefono': str(p.telefono) if p.telefono else '',
-        'direccion': p.direccion or '',
+        'email':    request.user.email,
+        'telefono': str(request.user.profile.telefono) if request.user.profile.telefono else '',
+        'direccion': request.user.profile.direccion or '',
         'is_superuser': request.user.is_superuser,
     })
 
@@ -148,10 +148,6 @@ def eliminar_categoria(request, pk):
     categoria.delete()
     messages.success(request, f"La categoría '{categoria.nombre}' se eliminó correctamente.")
     return redirect('ajustes-categorias')
-
-@login_required
-def current_user_api(request):
-    return JsonResponse({'username': request.user.username})
 
 
 @api_view(['GET'])
