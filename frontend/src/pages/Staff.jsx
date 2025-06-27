@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import axios from 'axios'
@@ -16,11 +15,10 @@ export default function Staff() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-
     Promise.all([
-      axios.get('/api/staff/',          { withCredentials: true }),
-      axios.get('/api/productos/',      { withCredentials: true }),
-      axios.get('/api/pedidos/',        { withCredentials: true }),
+      axios.get('/api/staff/',     { withCredentials: true }),
+      axios.get('/api/productos/', { withCredentials: true }),
+      axios.get('/api/pedidos/',   { withCredentials: true }),
     ])
       .then(([staffRes, productosRes, pedidosRes]) => {
         setStaff(staffRes.data)
@@ -107,6 +105,7 @@ export default function Staff() {
                   <th>Nombre</th>
                   <th>Email</th>
                   <th>Teléfono</th>
+                  <th>Rol</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -114,7 +113,7 @@ export default function Staff() {
                 {staff.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="4"
+                      colSpan="5"
                       className="text-center text-muted py-4"
                     >
                       No hay usuarios registrados.
@@ -126,6 +125,7 @@ export default function Staff() {
                       <td>{u.username}</td>
                       <td>{u.email}</td>
                       <td>{u.telefono || '—'}</td>
+                      <td>{u.role}</td>
                       <td>
                         <Link
                           to={`/staff/${u.id}`}
@@ -135,7 +135,7 @@ export default function Staff() {
                             color: '#FFF'
                           }}
                         >
-                          Ver
+                          Ver / Editar
                         </Link>
                         <Link
                           to={`/staff/delete/${u.id}`}

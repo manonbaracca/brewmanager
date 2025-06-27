@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Categoria, Producto, Pedido, PedidoDetalle
+from .models import (
+    Categoria, Producto, Pedido, PedidoDetalle,
+    AuditLog, Repartidor
+)
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,9 +24,16 @@ class ProductoSerializer(serializers.ModelSerializer):
         source='categoria',
         write_only=True
     )
+
     class Meta:
         model = Producto
         fields = ['id', 'nombre', 'categoria', 'categoria_id', 'cantidad']
+
+
+class RepartidorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Repartidor
+        fields = ['id', 'name', 'country']
 
 
 class PedidoDetalleSerializer(serializers.ModelSerializer):
@@ -40,12 +50,30 @@ class PedidoDetalleSerializer(serializers.ModelSerializer):
 
 
 class PedidoSerializer(serializers.ModelSerializer):
-    usuario = UsuarioSerializer(read_only=True)     # <-- aquí anidamos todo el user
+    usuario = UsuarioSerializer(read_only=True)
     detalles = PedidoDetalleSerializer(many=True)
+    status = serializers.ChoiceField(choices=Pedido.STATUS_CHOICES)
+    assigned_to = RepartidorSerializer(read_only=True)
+    assigned_to_id = serializers.PrimaryKeyRelatedField(
+        source='assigned_to',
+        queryset=Repartidor.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = Pedido
-        fields = ('id', 'numero_pedido', 'usuario', 'fecha', 'detalles')
+        fields = [
+            'id',
+            'numero_pedido',
+            'usuario',
+            'fecha',
+            'status',
+            'assigned_to',
+            'assigned_to_id',
+            'detalles',
+        ]
         read_only_fields = ('id', 'numero_pedido', 'usuario', 'fecha')
 
     def create(self, validated_data):
@@ -64,3 +92,17 @@ class PedidoSerializer(serializers.ModelSerializer):
             producto.cantidad -= cantidad
             producto.save()
         return pedido
+
+    def update(self, instance, validated_data):
+        instance.status = validated_data.get('status', instance.status)
+        instance.assigned_to = validated_data.get('assigned_to', instance.assigned_to)
+        instance.save()
+        return instance
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', default='', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = ['id', 'user', 'action', 'timestamp', 'description']

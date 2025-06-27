@@ -21,6 +21,10 @@ export default function Home() {
       navigate('/login')
       return
     }
+    if (user.role === 'logistica') {
+      navigate('/logistics')
+      return
+    }
 
     const target = user.is_superuser ? '/dashboard' : '/staff-index'
     navigate(target)
@@ -31,6 +35,12 @@ export default function Home() {
       navigate('/register')
       return
     }
+    
+    if (user.role === 'logistica') {
+      navigate('/logistics')
+      return
+    }
+      
     const target = user.is_superuser ? '/dashboard' : '/staff-index'
     navigate(target)
   }

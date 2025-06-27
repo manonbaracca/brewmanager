@@ -22,20 +22,32 @@ export default function Login() {
     })
 
     try {
+
       await axios.post(
         '/api/login/',
-        payload,                                
+        payload,
         {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           withCredentials: true
         }
       )
-      navigate('/dashboard')
-    } catch {
+
+
+      const { data: user } = await axios.get(
+        '/api/user/',           
+        { withCredentials: true }
+      )
+
+      if (user.is_superuser) {
+        navigate('/dashboard')
+      } else {
+        navigate('/staff-index')
+      }
+
+    } catch (err) {
       setAlerts([{ type: 'danger', msg: 'Usuario o contraseña incorrectos.' }])
     }
   }
-
 
   return (
     <Base title="Iniciar Sesión">

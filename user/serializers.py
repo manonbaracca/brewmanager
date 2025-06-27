@@ -24,10 +24,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
 class StaffSerializer(serializers.ModelSerializer):
-    telefono = serializers.CharField(source='profile.telefono', default='', read_only=True)
+    telefono  = serializers.CharField(source='profile.telefono', default='', read_only=True)
     direccion = serializers.CharField(source='profile.direccion', default='', read_only=True)
+    role      = serializers.CharField(source='profile.role', default='', read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'telefono', 'direccion']
+        fields = ['id', 'username', 'email', 'telefono', 'direccion', 'role']

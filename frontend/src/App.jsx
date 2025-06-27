@@ -23,6 +23,9 @@ import ProductUpdate from './pages/ProductUpdate'
 import ProductDelete from './pages/ProductDelete'
 import HacerPedido from './pages/HacerPedido'
 import StaffIndex from './pages/StaffIndex'
+import Logs from './pages/Logs'
+import LogisticsDashboard from './pages/LogisticsDashboard'
+
 
 axios.defaults.baseURL = '/'
 
@@ -37,24 +40,23 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/update" element={<ProfileUpdate />} />
         <Route path="/logout" element={<Logout />} />
-
         <Route path="/ajustes" element={<Ajustes />} />
         <Route path="/ajustes/categorias" element={<AjustesCategorias />} />
-
         <Route path="/staff" element={<Staff />} />
         <Route path="/staff/:id" element={<StaffDetail />} />
         <Route path="/staff/delete/:id" element={<StaffDelete />} />
         <Route path="/staff-index" element={<StaffIndex />} />
-
+        <Route path="/logistics" element={<LogisticsDashboard />} />
         <Route path="/pedidos" element={<Orders />} />
         <Route path="/pedidos/:id" element={<OrderDetail />} />
         <Route path="/pedidos/delete/:id" element={<OrderDelete />} />
-
         <Route path="/hacer-pedido" element={<HacerPedido />} />
-
         <Route path="/producto" element={<Products />} />
         <Route path="/producto/update/:id" element={<ProductUpdate />} />
         <Route path="/producto/delete/:id" element={<ProductDelete />} />
+        <Route path="/ver-logs" element={<Logs />} />
+
+      
       </Routes>
     </BrowserRouter>
   )
