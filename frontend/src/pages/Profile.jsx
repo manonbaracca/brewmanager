@@ -9,17 +9,15 @@ export default function Profile() {
   const [flash, setFlash] = useState('')
 
   useEffect(() => {
-    axios.get('/api/profile/')            
+    axios.get('/api/profile/')
       .then(res => setProfile(res.data))
       .catch(err => console.error(err))
-    if (location.state?.successMessage) {
-        setFlash(location.state.successMessage)
-        window.history.replaceState({}, document.title)
-    }
-    }, [location.state])
-        
-    
 
+    if (location.state?.successMessage) {
+      setFlash(location.state.successMessage)
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   if (!profile) {
     return (
@@ -31,17 +29,19 @@ export default function Profile() {
     )
   }
 
-  const { username, email, telefono, direccion, is_superuser } = profile
+  const { username, email, telefono, direccion, is_superuser, role } = profile
+  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'
 
   return (
     <Base title="Detalle del Usuario">
       <div className="container my-5">
         {flash && (
-         <div className="alert alert-success alert-dismissible fade show">
-           {flash}
-           <button type="button" className="btn-close" onClick={() => setFlash('')} />
-         </div>
+          <div className="alert alert-success alert-dismissible fade show">
+            {flash}
+            <button type="button" className="btn-close" onClick={() => setFlash('')} />
+          </div>
         )}
+
         {is_superuser && (
           <div className="row mb-4">
             <div className="col text-center">
@@ -64,10 +64,7 @@ export default function Profile() {
 
         <div className="row justify-content-center">
           <div className="col-md-8">
-            <div
-              className="card shadow-sm border-0"
-              style={{ borderRadius: '10px', overflow: 'hidden' }}
-            >
+            <div className="card shadow-sm border-0" style={{ borderRadius: '10px', overflow: 'hidden' }}>
               <div
                 className="card-header text-center"
                 style={{
@@ -80,10 +77,7 @@ export default function Profile() {
                 Detalle del Usuario
               </div>
 
-              <div
-                className="card-body"
-                style={{ backgroundColor: '#F5DEB3', color: '#5A2E1B', padding: '2rem' }}
-              >
+              <div className="card-body" style={{ backgroundColor: '#F5DEB3', color: '#5A2E1B', padding: '2rem' }}>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h4 className="mb-0" style={{ fontWeight: 600 }}>
                     Información del Perfil
@@ -98,40 +92,35 @@ export default function Profile() {
                 </div>
                 <hr style={{ borderColor: '#8B4513' }} />
 
-                <table
-                  className="table table-borderless mb-0 w-100"
-                  style={{ background: 'transparent' }}
-                >
+                <table className="table table-borderless mb-0 w-100" style={{ background: 'transparent' }}>
                   <tbody>
                     <tr>
-                      <th scope="row" style={{ width: '30%', fontWeight: 600 }}>
-                        Nombre:
-                      </th>
+                      <th scope="row" style={{ width: '30%', fontWeight: 600 }}>Nombre:</th>
                       <td>{username}</td>
                     </tr>
 
                     <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>
-                        Email:
-                      </th>
+                      <th scope="row" style={{ fontWeight: 600 }}>Email:</th>
                       <td>{email}</td>
                     </tr>
 
                     <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>
-                        Teléfono:
-                      </th>
+                      <th scope="row" style={{ fontWeight: 600 }}>Teléfono:</th>
                       <td>{telefono || '—'}</td>
                     </tr>
 
                     <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>
-                        Dirección:
-                      </th>
+                      <th scope="row" style={{ fontWeight: 600 }}>Dirección:</th>
                       <td>{direccion || '—'}</td>
+                    </tr>
+
+                    <tr>
+                      <th scope="row" style={{ fontWeight: 600 }}>Rol:</th>
+                      <td>{roleLabel}</td>
                     </tr>
                   </tbody>
                 </table>
+
               </div>
             </div>
           </div>

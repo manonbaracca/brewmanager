@@ -4,110 +4,130 @@ import { useNavigate, Link } from 'react-router-dom'
 import Base from '@/components/Base'
 
 export default function Login() {
+  const [step, setStep] = useState(1)
   const [credentials, setCredentials] = useState({ username: '', password: '' })
+  const [otpId, setOtpId] = useState(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [maskedEmail, setMaskedEmail] = useState(null)
   const [alerts, setAlerts] = useState([])
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  const pushAlert = (msg, type='danger') =>
+    setAlerts(cur => [...cur, { msg, type }])
 
   const handleChange = e => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async e => {
+  const handleSubmitStep1 = async e => {
     e.preventDefault()
     setAlerts([])
-
-    const payload = new URLSearchParams({
-      username: credentials.username,
-      password: credentials.password,
-    })
-
+    setLoading(true)
     try {
+      await axios.get('/api/csrf/', { withCredentials: true })
+      const payload = new URLSearchParams({
+        username: credentials.username,
+        password: credentials.password,
+      })
+      const { data } = await axios.post('/api/login/', payload, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        withCredentials: true,
+        validateStatus: () => true,
+      })
 
-      await axios.post(
-        '/api/login/',
-        payload,
-        {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          withCredentials: true
-        }
-      )
-
-
-      const { data: user } = await axios.get(
-        '/api/user/',           
-        { withCredentials: true }
-      )
-
-      if (user.is_superuser) {
-        navigate('/dashboard')
+      if (data?.otp_required && data.otp_id) {
+        setOtpId(data.otp_id)
+        setMaskedEmail(data.masked_email || null)
+        setStep(2)
       } else {
-        navigate('/staff-index')
+        pushAlert('No se pudo iniciar sesión.')
       }
+    } catch {
+      pushAlert('Usuario o contraseña incorrectos.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  const handleSubmitStep2 = async e => {
+    e.preventDefault()
+    setAlerts([])
+    setLoading(true)
+    try {
+      await axios.get('/api/csrf/', { withCredentials: true })
+      const payload = new URLSearchParams({ otp_id: otpId, code: otpCode })
+      await axios.post('/api/login/verify/', payload, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        withCredentials: true,
+      })
+
+      const { data: profile } = await axios.get('/api/profile/', { withCredentials: true })
+      const nextPath =
+        profile.is_superuser
+          ? '/dashboard'
+          : profile.role === 'logistica'
+            ? '/logistics'
+            : '/staff-index'
+      navigate(nextPath)
     } catch (err) {
-      setAlerts([{ type: 'danger', msg: 'Usuario o contraseña incorrectos.' }])
+      pushAlert('Código incorrecto o vencido.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <Base title="Iniciar Sesión">
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        padding: '1rem',
-        boxSizing: 'border-box'
-      }}>
-        <div className="card shadow-sm border-0 w-100" style={{ maxWidth: '500px' }}>
+      <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', width:'100%', padding:'1rem', boxSizing:'border-box' }}>
+        <div className="card shadow-sm border-0 w-100" style={{ maxWidth: 500 }}>
           <div className="card-header text-center" style={{ backgroundColor: '#5A2E1B' }}>
             <h3 className="text-white mb-0">Iniciar Sesión</h3>
           </div>
+
           <div className="card-body bg-white p-4">
             {alerts.map((a, i) => (
               <div key={i} className={`alert alert-${a.type} alert-dismissible fade show`} role="alert">
                 {a.msg}
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setAlerts(cur => cur.filter((_, idx) => idx !== i))}
-                />
+                <button type="button" className="btn-close" onClick={() => setAlerts(cur => cur.filter((_, idx) => idx !== i))} />
               </div>
             ))}
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label htmlFor="username" className="form-label">Usuario</label>
-                <input
-                  id="username"
-                  name="username"
-                  className="form-control"
-                  value={credentials.username}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="password" className="form-label">Contraseña</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  className="form-control"
-                  value={credentials.password}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn w-100 text-white fw-bold mt-3"
-                style={{ backgroundColor: '#8B4513' }}
-              >
-                Iniciar Sesión
-              </button>
-            </form>
+
+            {step === 1 ? (
+              <form onSubmit={handleSubmitStep1}>
+                <div className="mb-3">
+                  <label htmlFor="username" className="form-label">Usuario</label>
+                  <input id="username" name="username" className="form-control" value={credentials.username} onChange={handleChange} required autoComplete="username" />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="password" className="form-label">Contraseña</label>
+                  <input id="password" name="password" type="password" className="form-control" value={credentials.password} onChange={handleChange} required autoComplete="current-password" />
+                </div>
+                <button type="submit" className="btn w-100 text-white fw-bold mt-3" style={{ backgroundColor: '#8B4513' }} disabled={loading}>
+                  {loading ? 'Enviando código…' : 'Continuar'}
+                </button>
+                <div className="mt-3 text-center">
+                  <Link to="/forgot-password" className="text-decoration-none" style={{ color: '#5A2E1B' }}>
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmitStep2}>
+                <div className="mb-2 text-muted">
+                  Te enviamos un código a {maskedEmail ?? 'tu email registrado'}.
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="otp" className="form-label">Código de verificación</label>
+                  <input id="otp" className="form-control" value={otpCode} onChange={e => setOtpCode(e.target.value)} required inputMode="numeric" maxLength={6} placeholder="######" />
+                </div>
+                <button type="submit" className="btn w-100 text-white fw-bold mt-3" style={{ backgroundColor: '#8B4513' }} disabled={loading}>
+                  {loading ? 'Verificando…' : 'Ingresar'}
+                </button>
+              </form>
+            )}
           </div>
+
           <div className="card-footer text-center" style={{ backgroundColor: '#FFFFFF' }}>
             <small>
               ¿No tienes cuenta?{' '}

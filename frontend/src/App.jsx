@@ -25,9 +25,9 @@ import HacerPedido from './pages/HacerPedido'
 import StaffIndex from './pages/StaffIndex'
 import Logs from './pages/Logs'
 import LogisticsDashboard from './pages/LogisticsDashboard'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
-
-axios.defaults.baseURL = '/'
 
 function App() {
   return (
@@ -55,6 +55,8 @@ function App() {
         <Route path="/producto/update/:id" element={<ProductUpdate />} />
         <Route path="/producto/delete/:id" element={<ProductDelete />} />
         <Route path="/ver-logs" element={<Logs />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
       
       </Routes>

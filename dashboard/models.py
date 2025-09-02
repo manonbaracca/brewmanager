@@ -26,16 +26,16 @@ class Pedido(models.Model):
     fecha = models.DateTimeField(auto_now_add=True)
 
     STATUS_CHOICES = [
-        ('pending',   'Pendiente'),
-        ('processing','En Proceso'),
-        ('in_transit','En Camino'),
-        ('delivered', 'Entregado'),
-        ('cancelled', 'Cancelado'),
+        ('pendiente', 'Pendiente'),
+        ('en_proceso', 'En proceso'),
+        ('en_camino', 'En camino'),
+        ('entregado', 'Entregado'),
+        ('cancelado', 'Cancelado'),
     ]
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='pending',
+        default='pendiente',
     )
     assigned_to = models.ForeignKey(
         'Repartidor',
@@ -44,7 +44,8 @@ class Pedido(models.Model):
         blank=True,
         related_name='assigned_orders',
     )
-
+    entrega_estimada = models.DateField(null=True, blank=True) 
+    
     def save(self, *args, **kwargs):
         if not self.numero_pedido:
             self.numero_pedido = f"ORD-{str(uuid.uuid4())[:8]}"

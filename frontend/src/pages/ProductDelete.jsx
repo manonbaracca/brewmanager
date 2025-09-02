@@ -24,7 +24,7 @@ export default function ProductDelete() {
   const handleDelete = async () => {
     try {
       await axios.delete(`/api/productos/${id}/`, { withCredentials:true })
-      nav('/producto', { state: { successMessage: 'Producto eliminado.' } })
+      nav('/producto', { state: { successMessage: 'Producto eliminado exitosamente.' } })
     } catch {
       setAlert({ type:'danger', msg:'Error al eliminar.' })
     }

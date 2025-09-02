@@ -1,9 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import (
-    Categoria, Producto, Pedido, PedidoDetalle,
-    AuditLog, Repartidor
-)
+from .models import ( Categoria, Producto, Pedido, PedidoDetalle, AuditLog, Repartidor)
 
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -52,7 +49,7 @@ class PedidoDetalleSerializer(serializers.ModelSerializer):
 class PedidoSerializer(serializers.ModelSerializer):
     usuario = UsuarioSerializer(read_only=True)
     detalles = PedidoDetalleSerializer(many=True)
-    status = serializers.ChoiceField(choices=Pedido.STATUS_CHOICES)
+    status = serializers.ChoiceField(choices=Pedido.STATUS_CHOICES, required=False)
     assigned_to = RepartidorSerializer(read_only=True)
     assigned_to_id = serializers.PrimaryKeyRelatedField(
         source='assigned_to',
@@ -61,6 +58,8 @@ class PedidoSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    entrega_estimada = serializers.DateField(required=False, allow_null=True)
+
 
     class Meta:
         model = Pedido
@@ -72,6 +71,7 @@ class PedidoSerializer(serializers.ModelSerializer):
             'status',
             'assigned_to',
             'assigned_to_id',
+            'entrega_estimada',
             'detalles',
         ]
         read_only_fields = ('id', 'numero_pedido', 'usuario', 'fecha')
@@ -96,6 +96,10 @@ class PedidoSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.status = validated_data.get('status', instance.status)
         instance.assigned_to = validated_data.get('assigned_to', instance.assigned_to)
+        if 'entrega_estimada' in validated_data:
+            instance.entrega_estimada = validated_data.get('entrega_estimada')
+
+
         instance.save()
         return instance
 

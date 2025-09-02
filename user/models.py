@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
+from django.utils import timezone
+from datetime import timedelta
 
 class Profile(models.Model):
     ROLE_CHOICES = [
@@ -24,3 +26,25 @@ class Profile(models.Model):
 
     def __str__(self):
         return f'{self.user.username} ({self.get_role_display()})'
+
+
+class OTPCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otps')
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveIntegerField(default=0)
+    used = models.BooleanField(default=False)
+
+    @classmethod
+    def create_for_user(cls, user, minutes_valid=10):
+        expires = timezone.now() + timedelta(minutes=minutes_valid)
+        import random
+        code = f"{random.randint(0, 999999):06d}"
+        return cls.objects.create(user=user, code=code, expires_at=expires)
+
+    def is_valid(self):
+        return (not self.used) and timezone.now() <= self.expires_at and self.attempts < 5
+
+    def __str__(self):
+        return f"OTP {self.code} for {self.user.username}"

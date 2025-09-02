@@ -1,5 +1,3 @@
-// src/pages/HacerPedido.jsx
-
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
@@ -15,6 +13,7 @@ export default function HacerPedido() {
   const [carrito, setCarrito]             = useState([])
   const [alertas, setAlertas]             = useState([])
   const [loading, setLoading]             = useState(true)
+  const [isSubmitting, setIsSubmitting]   = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -53,7 +52,7 @@ export default function HacerPedido() {
       return pushAlerta('danger', 'La cantidad debe ser al menos 1.')
     }
 
-    const enCarrito = carrito.find(item => item.id === producto.id)?.cantidad || 0
+    const enCarrito  = carrito.find(item => item.id === producto.id)?.cantidad || 0
     const disponible = producto.cantidad - enCarrito
 
     if (cantidad > disponible) {
@@ -88,6 +87,8 @@ export default function HacerPedido() {
     }
     if (!window.confirm('¿Confirmas el pedido?')) return
 
+    setIsSubmitting(true)
+
     const payload = {
       detalles: carrito.map(item => ({
         producto_id: item.id,
@@ -96,14 +97,24 @@ export default function HacerPedido() {
     }
 
     axios.post('/api/pedidos/', payload, { withCredentials: true })
-      .then(() => {
-        // redirige a staff-index en vez de dashboard
-        navigate('/staff-index')
+      .then(({ data }) => {
+        const num = data?.numero_pedido
+        navigate('/staff-index', {
+          state: {
+            successMessage: num
+              ? `Pedido ${num} creado correctamente.`
+              : 'Pedido creado correctamente.'
+          }
+        })
       })
       .catch(err => {
-        const msg = err.response?.data?.detalles?.[0] || 'Error al crear pedido.'
+        const msg =
+          err.response?.data?.detalles?.[0] ||
+          err.response?.data?.detail ||
+          'Error al crear pedido.'
         pushAlerta('danger', msg)
       })
+      .finally(() => setIsSubmitting(false))
   }
 
   if (loading) {
@@ -233,8 +244,9 @@ export default function HacerPedido() {
                   className="btn w-100 text-white fw-semibold"
                   style={{ backgroundColor: '#8B4513' }}
                   onClick={handleRealizarPedido}
+                  disabled={isSubmitting}
                 >
-                  Realizar Pedido
+                  {isSubmitting ? 'Enviando…' : 'Realizar Pedido'}
                 </button>
               </div>
             </div>

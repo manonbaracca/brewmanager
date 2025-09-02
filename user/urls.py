@@ -1,19 +1,18 @@
 from django.urls import path
-from .views    import (
-    register_api, login_api, logout_api,
-    profile_api, profile_update_api,
-    staff_list_api, staff_detail_api
-)
-from .api_views import current_user
+from . import views as v       
+from . import api_views as av  
 
 urlpatterns = [
-    path('register/',       register_api,          name='api-register'),
-    path('login/',          login_api,             name='api-login'),
-    path('logout/',         logout_api,            name='api-logout'),
-    path('user/',           current_user,          name='api-current-user'),
-    path('profile/',        profile_api,           name='api-profile'),
-    path('profile/update/', profile_update_api,    name='api-profile-update'),
-    path('staff/',          staff_list_api,        name='api-staff-list'),
-    path('staff/<int:pk>/', staff_detail_api,      name='api-staff-detail'),
+    path('csrf/',             v.csrf_api,               name='api-csrf'),
+    path('register/',         v.register_api,           name='api-register'),
+    path('login/',            v.login_api,              name='api-login'),
+    path('login/verify/',     v.verify_otp_api,         name='api-login-verify'),
+    path('logout/',           v.logout_api,             name='api-logout'),
+    path('profile/',          v.profile_api,            name='api-profile'),
+    path('profile/update/',   v.profile_update_api,     name='api-profile-update'),
+    path('staff/',            v.staff_list_api,         name='api-staff-list'),
+    path('staff/<int:pk>/',   v.staff_detail_api,       name='api-staff-detail'),
+    path('user/',                     av.current_user,               name='api-current-user'),
+    path('password-reset/request/',   av.password_reset_request_api, name='api-password-reset-request'),
+    path('password-reset/confirm/',   av.password_reset_confirm_api, name='api-password-reset-confirm'),
 ]
-

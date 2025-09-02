@@ -10,6 +10,7 @@ export default function ProfileUpdate() {
     telefono: '',
     direccion: '',
   })
+  const [role, setRole] = useState('')           
   const [alerts, setAlerts] = useState([])
   const navigate = useNavigate()
 
@@ -22,6 +23,7 @@ export default function ProfileUpdate() {
           telefono: data.telefono,
           direccion:data.direccion,
         })
+        setRole(data.role || '')            
       })
       .catch(() => {
         setAlerts([{ type: 'danger', msg: 'No se pudo cargar el perfil.' }])
@@ -39,16 +41,15 @@ export default function ProfileUpdate() {
     try {
       await axios.post(
         '/api/profile/update/',
-        new URLSearchParams(formData),
+        new URLSearchParams(formData),          
         {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           withCredentials: true,
         }
       )
       navigate('/profile', {
-      state: { successMessage: 'Perfil actualizado exitosamente' }
+        state: { successMessage: 'Perfil actualizado exitosamente' }
       })
-
     } catch (err) {
       const data = err.response?.data
       if (data && typeof data === 'object') {
@@ -59,6 +60,8 @@ export default function ProfileUpdate() {
       }
     }
   }
+
+  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'
 
   return (
     <Base title="Actualizar Información">
@@ -85,21 +88,36 @@ export default function ProfileUpdate() {
                     <input id="username" name="username" className="form-control"
                       value={formData.username} onChange={handleChange} required />
                   </div>
+
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label">Email</label>
                     <input id="email" name="email" type="email" className="form-control"
                       value={formData.email} onChange={handleChange} required />
                   </div>
+
                   <div className="mb-3">
                     <label htmlFor="telefono" className="form-label">Teléfono</label>
                     <input id="telefono" name="telefono" className="form-control"
                       value={formData.telefono} onChange={handleChange} />
                   </div>
+
                   <div className="mb-3">
                     <label htmlFor="direccion" className="form-label">Dirección</label>
                     <input id="direccion" name="direccion" className="form-control"
                       value={formData.direccion} onChange={handleChange} />
                   </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="rol" className="form-label">Rol</label>
+                    <input
+                      id="rol"
+                      className="form-control"
+                      value={roleLabel}
+                      readOnly
+                      disabled
+                    />
+                  </div>
+
                   <div className="text-center">
                     <button type="submit" className="btn"
                       style={{

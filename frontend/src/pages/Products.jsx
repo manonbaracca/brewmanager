@@ -1,49 +1,67 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import Base from '@/components/Base'
 import TopNav from '@/components/TopNav'
+
+const sortByName = (arr = []) =>
+  [...arr].sort((a, b) =>
+    String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' })
+  )
 
 export default function Products() {
   const [categorias, setCategorias]   = useState([])
   const [selectedCat, setSelectedCat] = useState('Todos')
-  const [allProducts, setAllProducts] = useState([])    
-  const [productos, setProductos]     = useState([])    
+  const [allProducts, setAllProducts] = useState([])
+  const [productos, setProductos]     = useState([])
   const [usuariosCount, setUsuariosCount] = useState(0)
   const [pedidosCount, setPedidosCount]   = useState(0)
   const [form, setForm]                   = useState({ nombre: '', categoria_id: '', cantidad: 1 })
   const [alert, setAlert]                 = useState(null)
   const [loading, setLoading]             = useState(true)
+  const location = useLocation()
+
+  useEffect(() => {
+    const msg = location.state?.successMessage
+    if (msg) {
+      setAlert({ type: 'success', msg })
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   useEffect(() => {
     Promise.all([
-      axios.get('/api/categorias/',        { withCredentials: true }),
-      axios.get('/api/staff/',             { withCredentials: true }),
-      axios.get('/api/pedidos/',           { withCredentials: true }),
-      axios.get('/api/productos/',         { withCredentials: true }),
-      axios.get('/api/productos/?cantidad=0', { withCredentials: true })
+      axios.get('/api/categorias/',            { withCredentials: true }),
+      axios.get('/api/staff/',                 { withCredentials: true }),
+      axios.get('/api/pedidos/',               { withCredentials: true }),
+      axios.get('/api/productos/',             { withCredentials: true }),
+      axios.get('/api/productos/?cantidad=0',  { withCredentials: true })
     ])
-    .then(([catRes, usersRes, pedRes, prodRes, stockRes]) => {
-      setCategorias(catRes.data)
-      setUsuariosCount(usersRes.data.length)
-      setPedidosCount(pedRes.data.length)
-      setAllProducts(prodRes.data)
+    .then(([catRes, usersRes, pedRes, prodRes]) => {
+  
+      const cats = Array.isArray(catRes.data) ? [...catRes.data].sort(
+        (a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' })
+      ) : []
+      setCategorias(cats)
+
+      setUsuariosCount(Array.isArray(usersRes.data) ? usersRes.data.length : 0)
+      setPedidosCount(Array.isArray(pedRes.data)   ? pedRes.data.length   : 0)
+
+      const prods = Array.isArray(prodRes.data) ? sortByName(prodRes.data) : []
+      setAllProducts(prods)
     })
-    .catch(() => {
-      setAlert({ type:'warning', msg:'No se pudo cargar la info inicial.' })
-    })
-    .finally(() => {
-      setLoading(false)
-    })
+    .catch(() => setAlert({ type:'warning', msg:'No se pudo cargar la info inicial.' }))
+    .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
     if (selectedCat === 'Todos') {
-      setProductos(allProducts)
+      setProductos(sortByName(allProducts))
     } else {
-      setProductos(
-        allProducts.filter(p => String(p.categoria.id) === String(selectedCat))
+      const filtered = allProducts.filter(
+        p => String(p.categoria.id) === String(selectedCat)
       )
+      setProductos(sortByName(filtered))
     }
   }, [allProducts, selectedCat])
 
@@ -64,15 +82,11 @@ export default function Products() {
     try {
       await axios.post(
         '/api/productos/',
-        {
-          nombre:       form.nombre,
-          cantidad:     form.cantidad,
-          categoria_id: form.categoria_id,
-        },
+        { nombre: form.nombre, cantidad: form.cantidad, categoria_id: form.categoria_id },
         { withCredentials: true }
       )
       const { data: nuevos } = await axios.get('/api/productos/', { withCredentials: true })
-      setAllProducts(nuevos)
+      setAllProducts(sortByName(nuevos))  
       setForm({ nombre: '', categoria_id: '', cantidad: 1 })
       setAlert({ type: 'success', msg: 'Producto agregado correctamente.' })
     } catch (err) {
@@ -96,7 +110,6 @@ export default function Products() {
       </Base>
     )
   }
-  const sinStock = allProducts.filter(p => p.cantidad === 0)
 
   return (
     <Base title="Productos">
@@ -114,7 +127,6 @@ export default function Products() {
             <button className="btn-close" onClick={() => setAlert(null)} />
           </div>
         )}
-
 
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-body d-flex align-items-center justify-content-center p-3" style={{ backgroundColor: '#A0522D', gap: '.5rem' }}>
