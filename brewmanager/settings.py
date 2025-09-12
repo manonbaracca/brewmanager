@@ -13,9 +13,9 @@ SECRET_KEY = env('SECRET_KEY', default='dev-only-key-no-usar-en-produccion')
 DEBUG = env.bool('DEBUG', default=True)
 
 ALLOWED_HOSTS = [
-    'localhost', '127.0.0.1',
-    '.onrender.com',
-    *([env('RENDER_HOST')] if env('RENDER_HOST', default='') else []),
+    "localhost", "127.0.0.1",
+    os.environ.get("RENDER_HOST", ""),
+    ".onrender.com",
 ]
 
 INSTALLED_APPS = [
@@ -141,25 +141,21 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://TU_APP.vercel.app",          
+    os.environ.get("FRONTEND_ORIGIN", "https://example.vercel.app"),
+]        
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://TU_BACKEND.onrender.com",   
-    "https://TU_APP.vercel.app",         
+    os.environ.get("FRONTEND_ORIGIN", "https://example.vercel.app"),
+]
 
-if DEBUG:
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SAMESITE = "Lax"
-    SESSION_COOKIE_SAMESITE = "Lax"
-else:
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SAMESITE = "None"
-    SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"
 
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
