@@ -91,14 +91,18 @@ WSGI_APPLICATION = 'brewmanager.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'brewmanager',
-        'USER':'root',
-        'PASSWORD': 'Salta2334',
-        'PORT':3306,
-        'HOST': '127.0.0.1',
-
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_ALL_TABLES'",
+        },
     }
 }
+
 
 
 # Password validation
