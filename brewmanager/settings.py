@@ -1,10 +1,10 @@
-# brewmanager/settings.py
 from pathlib import Path
 import os
 import environ
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+RUNNING_ON_RENDER = bool(os.environ.get("RENDER")) 
 
 env = environ.Env(DEBUG=(bool, True))
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -111,22 +111,39 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 LOGIN_REDIRECT_URL = 'dashboard-index'
 LOGIN_URL = 'user-login'
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'auditoria.log'),
-        },
-    },
-    'loggers': {
-        'django': {'handlers': ['file'], 'level': 'INFO', 'propagate': True},
-        'app_logger': {'handlers': ['file'], 'level': 'INFO', 'propagate': False},
-    },
-}
 
+if RUNNING_ON_RENDER or os.environ.get("LOG_TO_STDOUT"):
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {"class": "logging.StreamHandler", "stream": sys.stdout},
+        },
+        "root": {"handlers": ["console"], "level": "INFO"},
+        "loggers": {
+            "django": {"handlers": ["console"], "level": "INFO", "propagate": True},
+        },
+    }
+else:
+    LOG_DIR = BASE_DIR / "logs"
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "file": {
+                "level": "INFO",
+                "class": "logging.FileHandler",
+                "filename": str(LOG_DIR / "auditoria.log"),
+            },
+            "console": {"class": "logging.StreamHandler", "stream": sys.stdout},
+        },
+        "root": {"handlers": ["file", "console"], "level": "INFO"},
+        "loggers": {
+            "django": {"handlers": ["file", "console"], "level": "INFO", "propagate": True},
+        },
+    }
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
