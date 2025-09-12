@@ -1,0 +1,10 @@
+Django>=5.2
+djangorestframework
+django-cors-headers
+django-environ
+gunicorn
+whitenoise[brotli]
+pymysql>=1.1
+django-phonenumber-field[phonenumberslite]
+django-crispy-forms
+crispy-bootstrap5
