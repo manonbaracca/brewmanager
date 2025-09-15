@@ -3,6 +3,11 @@ import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import Base from '@/components/Base'
 
+const getCookie = (name) => {
+  const m = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'))
+  return m ? decodeURIComponent(m[2]) : null
+}
+
 export default function Login() {
   const [step, setStep] = useState(1)
   const [credentials, setCredentials] = useState({ username: '', password: '' })
@@ -26,14 +31,20 @@ export default function Login() {
     setLoading(true)
     try {
       await axios.get('/api/csrf/', { withCredentials: true })
+      const csrftoken = getCookie('csrftoken')
+
       const payload = new URLSearchParams({
         username: credentials.username,
         password: credentials.password,
       })
+
       const { data } = await axios.post('/api/login/', payload, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         withCredentials: true,
-        validateStatus: () => true,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrftoken,
+        },
+        validateStatus: () => true, 
       })
 
       if (data?.otp_required && data.otp_id) {
@@ -56,10 +67,16 @@ export default function Login() {
     setLoading(true)
     try {
       await axios.get('/api/csrf/', { withCredentials: true })
+      const csrftoken = getCookie('csrftoken')
+
       const payload = new URLSearchParams({ otp_id: otpId, code: otpCode })
+
       await axios.post('/api/login/verify/', payload, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         withCredentials: true,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrftoken,
+        },
       })
 
       const { data: profile } = await axios.get('/api/profile/', { withCredentials: true })
@@ -70,7 +87,7 @@ export default function Login() {
             ? '/logistics'
             : '/staff-index'
       navigate(nextPath)
-    } catch (err) {
+    } catch {
       pushAlert('Código incorrecto o vencido.')
     } finally {
       setLoading(false)
