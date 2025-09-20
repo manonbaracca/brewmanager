@@ -56,7 +56,7 @@ export default function StaffIndex() {
     setLoading(true)
     ;(async () => {
       try {
-        const { data } = await api.get(`/api/pedidos/?usuario_id=${user.id}`)
+        const { data } = await api.get('/api/pedidos/', { params: { usuario_id: user.id } })
         if (alive) setPedidos(Array.isArray(data) ? data : [])
       } catch {
         if (alive) setError('No se pudieron cargar los pedidos.')
@@ -71,33 +71,23 @@ export default function StaffIndex() {
     const status = String(statusRaw || '').toLowerCase()
     const label  = STATUS_LABELS[status] || status
     const bg     = STATUS_BG[status] || '#6c757d'
-    return (
-      <span className="badge" style={{ backgroundColor: bg }}>
-        {label}
-      </span>
-    )
+    return <span className="badge" style={{ backgroundColor: bg }}>{label}</span>
   }
 
-  const isCancelBlocked = (statusRaw) => {
-    const s = String(statusRaw || '').toLowerCase()
-    return s === 'en_proceso' || s === 'en_camino' || s === 'entregado'
+
+  const isCancelBlocked = s => ['en_proceso','en_camino','entregado'].includes(String(s||'').toLowerCase())
+  
+  const handleBlockedCancel = (s) => {
+    const label = STATUS_LABELS[String(s||'').toLowerCase()] || s
+    setBanner({ type: 'warning', msg: `No podés cancelar un pedido en estado "${label}".` })
   }
 
-  const handleBlockedCancel = (statusRaw) => {
-    const s = String(statusRaw || '').toLowerCase()
-    const label = STATUS_LABELS[s] || s
-    setBanner({
-      type: 'warning',
-      msg: `No podés cancelar un pedido en estado "${label}".`
-    })
-  }
+
 
   if (loading) {
     return (
       <Base title="Mis Pedidos">
-        <div className="container my-5 text-center">
-          <p>Cargando…</p>
-        </div>
+        <div className="container my-5 text-center"><p>Cargando…</p></div>
       </Base>
     )
   }

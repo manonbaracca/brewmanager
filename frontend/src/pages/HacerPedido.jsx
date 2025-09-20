@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function HacerPedido() {
   const navigate = useNavigate()
@@ -17,8 +17,8 @@ export default function HacerPedido() {
 
   useEffect(() => {
     Promise.all([
-      axios.get('/api/categorias/', { withCredentials: true }),
-      axios.get('/api/productos/',   { withCredentials: true }),
+      api.get('/api/categorias/'),
+      api.get('/api/productos/'),
     ])
       .then(([catRes, prodRes]) => {
         const cats  = Array.isArray(catRes.data) ? catRes.data : []
@@ -27,9 +27,7 @@ export default function HacerPedido() {
         setAllProducts(prods)
         setProductos(prods)
       })
-      .catch(() => {
-        setAlertas([{ type: 'danger', msg: 'Error al cargar datos iniciales.' }])
-      })
+      .catch(() => setAlertas([{ type: 'danger', msg: 'Error al cargar datos iniciales.' }]))
       .finally(() => setLoading(false))
   }, [])
 
@@ -37,38 +35,26 @@ export default function HacerPedido() {
     if (selectedCat === 'Todos') {
       setProductos(allProducts)
     } else {
-      setProductos(
-        allProducts.filter(p => String(p.categoria.id) === String(selectedCat))
-      )
+      setProductos(allProducts.filter(p => String(p.categoria.id) === String(selectedCat)))
     }
   }, [selectedCat, allProducts])
 
-  const pushAlerta = (type, msg) => {
-    setAlertas(a => [...a, { type, msg }])
-  }
+  const pushAlerta = (type, msg) => setAlertas(a => [...a, { type, msg }])
 
   const handleAgregarCarrito = (producto, cantidad) => {
-    if (cantidad < 1) {
-      return pushAlerta('danger', 'La cantidad debe ser al menos 1.')
-    }
+    if (cantidad < 1) return pushAlerta('danger', 'La cantidad debe ser al menos 1.')
 
     const enCarrito  = carrito.find(item => item.id === producto.id)?.cantidad || 0
     const disponible = producto.cantidad - enCarrito
-
     if (cantidad > disponible) {
-      return pushAlerta(
-        'danger',
-        `No hay suficiente stock para ${producto.nombre}. Quedan ${disponible}.`
-      )
+      return pushAlerta('danger', `No hay suficiente stock para ${producto.nombre}. Quedan ${disponible}.`)
     }
 
     setCarrito(prev => {
       const existe = prev.find(item => item.id === producto.id)
       if (existe) {
         return prev.map(item =>
-          item.id === producto.id
-            ? { ...item, cantidad: item.cantidad + cantidad }
-            : item
+          item.id === producto.id ? { ...item, cantidad: item.cantidad + cantidad } : item
         )
       }
       return [...prev, { id: producto.id, nombre: producto.nombre, cantidad }]
@@ -82,29 +68,19 @@ export default function HacerPedido() {
   }
 
   const handleRealizarPedido = () => {
-    if (carrito.length === 0) {
-      return pushAlerta('warning', 'El carrito está vacío.')
-    }
+    if (carrito.length === 0) return pushAlerta('warning', 'El carrito está vacío.')
     if (!window.confirm('¿Confirmas el pedido?')) return
 
     setIsSubmitting(true)
-
     const payload = {
-      detalles: carrito.map(item => ({
-        producto_id: item.id,
-        cantidad:    item.cantidad
-      }))
+      detalles: carrito.map(item => ({ producto_id: item.id, cantidad: item.cantidad }))
     }
 
-    axios.post('/api/pedidos/', payload, { withCredentials: true })
+    api.post('/api/pedidos/', payload)
       .then(({ data }) => {
         const num = data?.numero_pedido
         navigate('/staff-index', {
-          state: {
-            successMessage: num
-              ? `Pedido ${num} creado correctamente.`
-              : 'Pedido creado correctamente.'
-          }
+          state: { successMessage: num ? `Pedido ${num} creado correctamente.` : 'Pedido creado correctamente.' }
         })
       })
       .catch(err => {
@@ -132,10 +108,7 @@ export default function HacerPedido() {
           <div
             key={i}
             className={`alert alert-${a.type} alert-dismissible fade show`}
-            style={{
-              backgroundColor: a.type === 'danger' ? '#8B0000' : '#A0522D',
-              color: '#FFF'
-            }}
+            style={{ backgroundColor: a.type === 'danger' ? '#8B0000' : '#A0522D', color: '#FFF' }}
           >
             {a.msg}
             <button
@@ -169,10 +142,7 @@ export default function HacerPedido() {
 
                 <ul className="list-group">
                   {productos.map(p => (
-                    <li
-                      key={p.id}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                    >
+                    <li key={p.id} className="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <strong>{p.nombre}</strong><br/>
                         <small style={{ color: '#5A2E1B' }}>Stock: {p.cantidad}</small>
@@ -218,10 +188,7 @@ export default function HacerPedido() {
               <div className="card-body">
                 <ul className="list-group">
                   {carrito.map(item => (
-                    <li
-                      key={item.id}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                    >
+                    <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
                       {item.nombre} × {item.cantidad}
                       <button
                         className="btn btn-sm text-white"
@@ -233,9 +200,7 @@ export default function HacerPedido() {
                     </li>
                   ))}
                   {carrito.length === 0 && (
-                    <li className="list-group-item text-center text-muted">
-                      Carrito vacío
-                    </li>
+                    <li className="list-group-item text-center text-muted">Carrito vacío</li>
                   )}
                 </ul>
               </div>

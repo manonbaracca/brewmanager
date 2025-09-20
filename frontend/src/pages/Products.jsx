@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
 import { Link, useLocation } from 'react-router-dom'
 import Base from '@/components/Base'
 import TopNav from '@/components/TopNav'
+import api, { initCsrf } from '@/lib/api'
 
 const sortByName = (arr = []) =>
   [...arr].sort((a, b) =>
@@ -16,9 +16,9 @@ export default function Products() {
   const [productos, setProductos]     = useState([])
   const [usuariosCount, setUsuariosCount] = useState(0)
   const [pedidosCount, setPedidosCount]   = useState(0)
-  const [form, setForm]                   = useState({ nombre: '', categoria_id: '', cantidad: 1 })
-  const [alert, setAlert]                 = useState(null)
-  const [loading, setLoading]             = useState(true)
+  const [form, setForm] = useState({ nombre: '', categoria_id: '', cantidad: 1 })
+  const [alert, setAlert] = useState(null)
+  const [loading, setLoading] = useState(true)
   const location = useLocation()
 
   useEffect(() => {
@@ -30,37 +30,42 @@ export default function Products() {
   }, [location.state])
 
   useEffect(() => {
-    Promise.all([
-      axios.get('/api/categorias/',            { withCredentials: true }),
-      axios.get('/api/staff/',                 { withCredentials: true }),
-      axios.get('/api/pedidos/',               { withCredentials: true }),
-      axios.get('/api/productos/',             { withCredentials: true }),
-      axios.get('/api/productos/?cantidad=0',  { withCredentials: true })
-    ])
-    .then(([catRes, usersRes, pedRes, prodRes]) => {
-  
-      const cats = Array.isArray(catRes.data) ? [...catRes.data].sort(
-        (a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity: 'base' })
-      ) : []
-      setCategorias(cats)
+    let alive = true
+    ;(async () => {
+      try {
+        const [catRes, usersRes, pedRes, prodRes] = await Promise.all([
+          api.get('/api/categorias/'),
+          api.get('/api/staff/'),
+          api.get('/api/pedidos/'),
+          api.get('/api/productos/')
+        ])
 
-      setUsuariosCount(Array.isArray(usersRes.data) ? usersRes.data.length : 0)
-      setPedidosCount(Array.isArray(pedRes.data)   ? pedRes.data.length   : 0)
+        if (!alive) return
 
-      const prods = Array.isArray(prodRes.data) ? sortByName(prodRes.data) : []
-      setAllProducts(prods)
-    })
-    .catch(() => setAlert({ type:'warning', msg:'No se pudo cargar la info inicial.' }))
-    .finally(() => setLoading(false))
+        const cats = Array.isArray(catRes.data)
+          ? [...catRes.data].sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es', { sensitivity:'base' }))
+          : []
+        setCategorias(cats)
+
+        setUsuariosCount(Array.isArray(usersRes.data) ? usersRes.data.length : 0)
+        setPedidosCount(Array.isArray(pedRes.data) ? pedRes.data.length : 0)
+
+        const prods = Array.isArray(prodRes.data) ? sortByName(prodRes.data) : []
+        setAllProducts(prods)
+      } catch {
+        if (alive) setAlert({ type:'warning', msg:'No se pudo cargar la info inicial.' })
+      } finally {
+        if (alive) setLoading(false)
+      }
+    })()
+    return () => { alive = false }
   }, [])
 
   useEffect(() => {
     if (selectedCat === 'Todos') {
       setProductos(sortByName(allProducts))
     } else {
-      const filtered = allProducts.filter(
-        p => String(p.categoria.id) === String(selectedCat)
-      )
+      const filtered = allProducts.filter(p => String(p.categoria.id) === String(selectedCat))
       setProductos(sortByName(filtered))
     }
   }, [allProducts, selectedCat])
@@ -80,13 +85,14 @@ export default function Products() {
     }
 
     try {
-      await axios.post(
-        '/api/productos/',
-        { nombre: form.nombre, cantidad: form.cantidad, categoria_id: form.categoria_id },
-        { withCredentials: true }
-      )
-      const { data: nuevos } = await axios.get('/api/productos/', { withCredentials: true })
-      setAllProducts(sortByName(nuevos))  
+      await initCsrf()
+      await api.post('/api/productos/', {
+        nombre: form.nombre,
+        cantidad: form.cantidad,
+        categoria_id: form.categoria_id,
+      })
+      const { data: nuevos } = await api.get('/api/productos/')
+      setAllProducts(sortByName(nuevos))
       setForm({ nombre: '', categoria_id: '', cantidad: 1 })
       setAlert({ type: 'success', msg: 'Producto agregado correctamente.' })
     } catch (err) {
@@ -131,16 +137,9 @@ export default function Products() {
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-body d-flex align-items-center justify-content-center p-3" style={{ backgroundColor: '#A0522D', gap: '.5rem' }}>
             <label className="fw-bold text-white mb-0">Categoría:</label>
-            <select
-              className="form-select"
-              style={{ maxWidth: 300 }}
-              value={selectedCat}
-              onChange={e => setSelectedCat(e.target.value)}
-            >
+            <select className="form-select" style={{ maxWidth: 300 }} value={selectedCat} onChange={e => setSelectedCat(e.target.value)}>
               <option value="Todos">Todas las categorías</option>
-              {categorias.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
+              {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
           </div>
         </div>
@@ -161,9 +160,7 @@ export default function Products() {
                     <label className="form-label">Categoría</label>
                     <select name="categoria_id" className="form-select" value={form.categoria_id} onChange={handleChange} required>
                       <option value="">Selecciona...</option>
-                      {categorias.map(c=>(
-                        <option key={c.id} value={c.id}>{c.nombre}</option>
-                      ))}
+                      {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
                   </div>
                   <div className="mb-3">
@@ -189,9 +186,7 @@ export default function Products() {
                 ) : (
                   <table className="table table-hover mb-0">
                     <thead className="text-white text-center" style={{ backgroundColor:'#8B4513' }}>
-                      <tr>
-                        <th>Nombre</th><th>Categoría</th><th>Cantidad</th><th>Acciones</th>
-                      </tr>
+                      <tr><th>Nombre</th><th>Categoría</th><th>Cantidad</th><th>Acciones</th></tr>
                     </thead>
                     <tbody>
                       {productos.map(p => (

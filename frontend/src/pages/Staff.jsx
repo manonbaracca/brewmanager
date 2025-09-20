@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import axios from 'axios'
 import Base from '@/components/Base'
 import TopNav from '@/components/TopNav'
+import api from '@/lib/api'
 
 const sortByUsername = (a, b) =>
   String(a.username).localeCompare(String(b.username), 'es', { sensitivity: 'base' })
@@ -21,24 +21,25 @@ export default function Staff() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      axios.get('/api/user/',      { withCredentials: true }),
-      axios.get('/api/staff/',     { withCredentials: true }),
-      axios.get('/api/productos/', { withCredentials: true }),
-      axios.get('/api/pedidos/',   { withCredentials: true }),
-    ])
-      .then(([meRes, staffRes, productosRes, pedidosRes]) => {
+    let alive = true
+    ;(async () => {
+      try {
+        const [meRes, staffRes, productosRes, pedidosRes] = await Promise.all([
+          api.get('/api/user/'),
+          api.get('/api/staff/'),
+          api.get('/api/productos/'),
+          api.get('/api/pedidos/'),
+        ])
+
+        if (!alive) return
+
         setMe(meRes.data)
 
         const staffList = Array.isArray(staffRes.data) ? staffRes.data : []
         setStaff(staffList)
 
         const uniqueRoles = Array.from(
-          new Set(
-            staffList
-              .map(u => u.role)
-              .filter(r => r && String(r).trim() !== '')
-          )
+          new Set(staffList.map(u => u.role).filter(r => r && String(r).trim() !== ''))
         ).sort((a, b) => String(a).localeCompare(String(b), 'es', { sensitivity: 'base' }))
         setRoles(uniqueRoles)
 
@@ -48,16 +49,20 @@ export default function Staff() {
 
         const allPedidos = pedidosRes.data
         setPedidosCount(Array.isArray(allPedidos) ? allPedidos.length : 0)
-      })
-      .catch(() => setError('No se pudo cargar la información.'))
-      .finally(() => setLoading(false))
+      } catch {
+        if (alive) setError('No se pudo cargar la información.')
+      } finally {
+        if (alive) setLoading(false)
+      }
+    })()
+    return () => { alive = false }
   }, [])
 
   const displayedStaff = useMemo(() => {
     let list = staff
-    if (me?.id) list = list.filter(u => u.id !== me.id)        
+    if (me?.id) list = list.filter(u => u.id !== me.id)
     if (roleFilter !== 'all') list = list.filter(u => u.role === roleFilter)
-    return [...list].sort(sortByUsername)                      
+    return [...list].sort(sortByUsername)
   }, [staff, me, roleFilter])
 
   if (loading) {
@@ -94,10 +99,7 @@ export default function Staff() {
         )}
 
         <div className="card shadow-sm border-0 mb-4">
-          <div
-            className="card-body d-flex align-items-center justify-content-center p-3"
-            style={{ backgroundColor: '#A0522D', gap: '.5rem' }}
-          >
+          <div className="card-body d-flex align-items-center justify-content-center p-3" style={{ backgroundColor: '#A0522D', gap: '.5rem' }}>
             <label className="fw-bold text-white mb-0">Rol:</label>
             <select
               className="form-select"
@@ -114,10 +116,7 @@ export default function Staff() {
         </div>
 
         <div className="card shadow-sm border-0">
-          <div
-            className="card-header text-white text-center"
-            style={{ backgroundColor: '#5A2E1B', fontWeight: 'bold' }}
-          >
+          <div className="card-header text-white text-center" style={{ backgroundColor: '#5A2E1B', fontWeight: 'bold' }}>
             Gestión de Usuarios
           </div>
           <div className="card-body p-0">
@@ -135,9 +134,7 @@ export default function Staff() {
                 {displayedStaff.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-center text-muted py-4">
-                      {roleFilter === 'all'
-                        ? 'No hay usuarios para mostrar.'
-                        : 'No hay usuarios con ese rol.'}
+                      {roleFilter === 'all' ? 'No hay usuarios para mostrar.' : 'No hay usuarios con ese rol.'}
                     </td>
                   </tr>
                 ) : (
@@ -148,18 +145,10 @@ export default function Staff() {
                       <td>{u.telefono || '—'}</td>
                       <td>{u.role}</td>
                       <td>
-                        <Link
-                          to={`/staff/${u.id}`}
-                          className="btn btn-sm me-2"
-                          style={{ backgroundColor: '#A0522D', color: '#FFF' }}
-                        >
+                        <Link to={`/staff/${u.id}`} className="btn btn-sm me-2" style={{ backgroundColor: '#A0522D', color: '#FFF' }}>
                           Ver / Editar
                         </Link>
-                        <Link
-                          to={`/staff/delete/${u.id}`}
-                          className="btn btn-sm"
-                          style={{ backgroundColor: '#8B0000', color: '#FFF' }}
-                        >
+                        <Link to={`/staff/delete/${u.id}`} className="btn btn-sm" style={{ backgroundColor: '#8B0000', color: '#FFF' }}>
                           Eliminar
                         </Link>
                       </td>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
 import logo from '@/static/img/logo.png'
+import api from '@/lib/api'   
 
 export default function Home() {
   const navigate = useNavigate()
@@ -9,7 +9,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    axios.get('/api/user/', { withCredentials: true })
+    api.get('/api/user/')
       .then(({ data }) => {
         if (data?.is_authenticated) setUser(data)
         else setUser(null)

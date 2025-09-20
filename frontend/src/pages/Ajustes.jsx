@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function Ajustes() {
   return (

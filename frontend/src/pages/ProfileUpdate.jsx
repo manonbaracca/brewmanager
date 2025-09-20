@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api, { initCsrf } from '@/lib/api'
 
 export default function ProfileUpdate() {
   const [formData, setFormData] = useState({
@@ -10,24 +10,28 @@ export default function ProfileUpdate() {
     telefono: '',
     direccion: '',
   })
-  const [role, setRole] = useState('')           
+  const [role, setRole] = useState('')
   const [alerts, setAlerts] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
-    axios.get('/api/profile/', { withCredentials: true })
-      .then(({ data }) => {
+    let alive = true
+    ;(async () => {
+      try {
+        const { data } = await api.get('/api/profile/')
+        if (!alive) return
         setFormData({
           username: data.username,
           email:    data.email,
           telefono: data.telefono,
           direccion:data.direccion,
         })
-        setRole(data.role || '')            
-      })
-      .catch(() => {
-        setAlerts([{ type: 'danger', msg: 'No se pudo cargar el perfil.' }])
-      })
+        setRole(data.role || '')
+      } catch {
+        if (alive) setAlerts([{ type: 'danger', msg: 'No se pudo cargar el perfil.' }])
+      }
+    })()
+    return () => { alive = false }
   }, [])
 
   const handleChange = e => {
@@ -37,19 +41,14 @@ export default function ProfileUpdate() {
   const handleSubmit = async e => {
     e.preventDefault()
     setAlerts([])
-
     try {
-      await axios.post(
+      await initCsrf()
+      await api.post(
         '/api/profile/update/',
-        new URLSearchParams(formData),          
-        {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          withCredentials: true,
-        }
+        new URLSearchParams(formData), 
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       )
-      navigate('/profile', {
-        state: { successMessage: 'Perfil actualizado exitosamente' }
-      })
+      navigate('/profile', { state: { successMessage: 'Perfil actualizado exitosamente' } })
     } catch (err) {
       const data = err.response?.data
       if (data && typeof data === 'object') {
@@ -109,13 +108,7 @@ export default function ProfileUpdate() {
 
                   <div className="mb-3">
                     <label htmlFor="rol" className="form-label">Rol</label>
-                    <input
-                      id="rol"
-                      className="form-control"
-                      value={roleLabel}
-                      readOnly
-                      disabled
-                    />
+                    <input id="rol" className="form-control" value={roleLabel} readOnly disabled />
                   </div>
 
                   <div className="text-center">

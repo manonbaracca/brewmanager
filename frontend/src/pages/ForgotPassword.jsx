@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function ForgotPassword() {
   const [value, setValue] = useState('')
@@ -11,8 +11,8 @@ export default function ForgotPassword() {
     e.preventDefault()
     setLoading(true)
     try {
-      await axios.get('/api/csrf/', { withCredentials: true })
-      await axios.post('/api/password-reset/request/', { email: value }, { withCredentials: true })
+      await api.get('/api/csrf/') 
+      await api.post('/api/password-reset/request/', { email: value })
       setSent(true)
     } finally {
       setLoading(false)
@@ -34,7 +34,13 @@ export default function ForgotPassword() {
             ) : (
               <form onSubmit={handleSubmit}>
                 <label className="form-label">Email</label>
-                <input className="form-control" value={value} onChange={e => setValue(e.target.value)} required type="email" />
+                <input
+                  className="form-control"
+                  value={value}
+                  onChange={e => setValue(e.target.value)}
+                  required
+                  type="email"
+                />
                 <button className="btn mt-3 text-white" style={{ backgroundColor: '#8B4513' }} disabled={loading}>
                   {loading ? 'Enviando…' : 'Enviar enlace'}
                 </button>

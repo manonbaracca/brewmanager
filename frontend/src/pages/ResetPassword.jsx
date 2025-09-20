@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api, { initCsrf } from '@/lib/api'
 
 export default function ResetPassword() {
   const { uid, token } = useParams()
@@ -18,8 +18,10 @@ export default function ResetPassword() {
     if (p1 !== p2) return setError('Las contraseñas no coinciden.')
     setLoading(true)
     try {
-      await axios.get('/api/csrf/', { withCredentials: true })
-      await axios.post('/api/password-reset/confirm/', { uid, token, password1: p1, password2: p2 }, { withCredentials: true })
+      await initCsrf()
+      await api.post('/api/password-reset/confirm/', {
+        uid, token, password1: p1, password2: p2
+      })
       setDone(true)
       setTimeout(() => navigate('/login'), 1500)
     } catch (err) {

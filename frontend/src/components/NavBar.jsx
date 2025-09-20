@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/lib/api'
 
 export default function NavBar() {
   const [user, setUser] = useState(null)
@@ -10,8 +10,7 @@ export default function NavBar() {
     let cancelled = false
     ;(async () => {
       try {
-        await axios.get('/api/csrf/', { withCredentials: true }) 
-        const { data } = await axios.get('/api/user/', { withCredentials: true })
+        const { data } = await api.get('/api/user/')
         if (!cancelled) setUser(data?.is_authenticated ? data : null)
       } catch {
         if (!cancelled) setUser(null)
@@ -22,11 +21,11 @@ export default function NavBar() {
 
   const handleLogout = async () => {
     try {
-      await axios.get('/api/csrf/', { withCredentials: true })
-      await axios.post('/api/logout/', new URLSearchParams(), {
-        withCredentials: true,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      })
+      await api.post(
+        '/api/logout/',
+        new URLSearchParams(), 
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      )
     } finally {
       setUser(null)
       navigate('/logout', { replace: true })

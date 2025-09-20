@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function AjustesCategorias() {
   const [categorias, setCategorias] = useState([])
@@ -15,8 +15,8 @@ export default function AjustesCategorias() {
 
   const fetchCategorias = async () => {
     try {
-      const { data } = await axios.get('/api/categorias/', { withCredentials: true })
-      setCategorias(data)
+      const { data } = await api.get('/api/categorias/')
+      setCategorias(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error(err)
     }
@@ -24,40 +24,21 @@ export default function AjustesCategorias() {
 
   const handleGuardar = async (id, nombre) => {
     try {
-      await axios.put(
-        `/api/categorias/${id}/`,
-        JSON.stringify({ nombre: nombre.trim() }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true,
-        }
-      )
-      setAlerts(cur => [
-        ...cur,
-        { type: 'success', msg: 'Categoría actualizada correctamente.' }
-      ])
+      await api.put(`/api/categorias/${id}/`, { nombre: nombre.trim() })
+      setAlerts(cur => [...cur, { type: 'success', msg: 'Categoría actualizada correctamente.' }])
       fetchCategorias()
     } catch {
-      setAlerts(cur => [
-        ...cur,
-        { type: 'danger', msg: 'No se pudo actualizar la categoría.' }
-      ])
+      setAlerts(cur => [...cur, { type: 'danger', msg: 'No se pudo actualizar la categoría.' }])
     }
   }
 
   const handleEliminar = async id => {
     try {
-      await axios.delete(`/api/categorias/${id}/`, { withCredentials: true })
+      await api.delete(`/api/categorias/${id}/`)
       setCategorias(cats => cats.filter(c => c.id !== id))
-      setAlerts(cur => [
-        ...cur,
-        { type: 'success', msg: 'Categoría eliminada correctamente.' }
-      ])
+      setAlerts(cur => [...cur, { type: 'success', msg: 'Categoría eliminada correctamente.' }])
     } catch {
-      setAlerts(cur => [
-        ...cur,
-        { type: 'danger', msg: 'No se pudo eliminar la categoría.' }
-      ])
+      setAlerts(cur => [...cur, { type: 'danger', msg: 'No se pudo eliminar la categoría.' }])
     }
   }
 
@@ -65,24 +46,15 @@ export default function AjustesCategorias() {
     e.preventDefault()
     setAlerts([])
     try {
-      await axios.post(
-        '/api/categorias/',
-        JSON.stringify({ nombre: nuevaCat.trim() }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true,
-        }
-      )
+      await api.post('/api/categorias/', { nombre: nuevaCat.trim() })
       setAlerts([{ type: 'success', msg: 'Categoría agregada correctamente.' }])
       setNuevaCat('')
       fetchCategorias()
     } catch (err) {
       const isDup = err.response?.status === 400
-      setAlerts([{ 
+      setAlerts([{
         type: 'danger',
-        msg: isDup
-          ? 'La categoría ya existe.'
-          : 'Error al agregar la categoría.'
+        msg: isDup ? 'La categoría ya existe.' : 'Error al agregar la categoría.'
       }])
     }
   }
@@ -94,17 +66,11 @@ export default function AjustesCategorias() {
           <div
             key={i}
             className={`alert alert-${a.type} alert-dismissible fade show shadow-sm`}
-            style={{
-              backgroundColor: '#F5DEB3',
-              borderColor:     '#8B4513',
-              color:           '#5A2E1B',
-            }}
+            style={{ backgroundColor: '#F5DEB3', borderColor: '#8B4513', color: '#5A2E1B' }}
             role="alert"
           >
             {a.msg}
-            <button
-              type="button"
-              className="btn-close"
+            <button type="button" className="btn-close"
               onClick={() => setAlerts(cur => cur.filter((_, idx) => idx !== i))}
             />
           </div>
@@ -113,10 +79,7 @@ export default function AjustesCategorias() {
         <div className="row justify-content-center">
           <div className="col-md-8">
             <div className="card shadow">
-              <div
-                className="card-header text-center text-white"
-                style={{ backgroundColor: '#8B4513' }}
-              >
+              <div className="card-header text-center text-white" style={{ backgroundColor: '#8B4513' }}>
                 Gestión de Categorías
               </div>
               <div className="card-body">
@@ -142,26 +105,17 @@ export default function AjustesCategorias() {
                         <td className="text-center">
                           <button
                             className="btn btn-sm"
-                            style={{
-                              backgroundColor: '#D4A373',
-                              color:           '#FFF',
-                              marginRight:     '0.5rem'
-                            }}
+                            style={{ backgroundColor: '#D4A373', color: '#FFF', marginRight: '0.5rem' }}
                             onClick={() => {
-                              const input = document.querySelector(
-                                `input[value="${cat.nombre}"]`
-                              )
-                              handleGuardar(cat.id, input.value)
+                              const input = document.querySelector(`input[value="${cat.nombre}"]`)
+                              handleGuardar(cat.id, input?.value ?? cat.nombre)
                             }}
                           >
                             Guardar
                           </button>
                           <button
                             className="btn btn-sm"
-                            style={{
-                              backgroundColor: '#A73E1C',
-                              color:           '#FFF'
-                            }}
+                            style={{ backgroundColor: '#A73E1C', color: '#FFF' }}
                             onClick={() => handleEliminar(cat.id)}
                           >
                             Eliminar
@@ -171,14 +125,12 @@ export default function AjustesCategorias() {
                     ))}
                   </tbody>
                 </table>
-                <hr className="my-4" />
 
+                <hr className="my-4" />
                 <h5 className="text-center mb-4">Agregar Nueva Categoría</h5>
                 <form onSubmit={handleAgregar}>
                   <div className="mb-3">
-                    <label htmlFor="nuevaCat" className="form-label">
-                      Nueva Categoría:
-                    </label>
+                    <label htmlFor="nuevaCat" className="form-label">Nueva Categoría:</label>
                     <input
                       id="nuevaCat"
                       className="form-control"
@@ -189,29 +141,15 @@ export default function AjustesCategorias() {
                     />
                   </div>
                   <div className="text-center">
-                    <button
-                      type="submit"
-                      className="btn"
-                      style={{
-                        backgroundColor: '#8B4513',
-                        color:           '#FFF',
-                        marginRight:     '1rem'
-                      }}
-                    >
+                    <button type="submit" className="btn" style={{ backgroundColor: '#8B4513', color: '#FFF', marginRight: '1rem' }}>
                       Agregar
                     </button>
-                    <Link
-                      to="/ajustes"
-                      className="btn"
-                      style={{
-                        backgroundColor: '#A73E1C',
-                        color:           '#FFF'
-                      }}
-                    >
+                    <Link to="/ajustes" className="btn" style={{ backgroundColor: '#A73E1C', color: '#FFF' }}>
                       Volver
                     </Link>
                   </div>
                 </form>
+
               </div>
             </div>
           </div>

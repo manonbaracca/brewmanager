@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api from '@/lib/api'  
 
 const STATUS_LABELS = {
   pendiente:   'Pendiente',
@@ -16,7 +16,6 @@ const STATUS_BG = {
   entregado:   '#198754',
   cancelado:   '#6c757d',
 }
-
 const normalizeStatus = (s) => {
   const key = String(s || '').toLowerCase()
   const map = {
@@ -32,7 +31,6 @@ const isAccepted = (s) => {
   const k = normalizeStatus(s)
   return k === 'en_proceso' || k === 'en_camino' || k === 'entregado'
 }
-
 function matchByDate(isoString, filtro) {
   if (!isoString || filtro === 'Todos') return true
   const d = new Date(isoString)
@@ -56,8 +54,8 @@ export default function LogisticsDashboard() {
   const fetchAll = () => {
     setLoading(true)
     Promise.all([
-      axios.get('/api/profile/', { withCredentials: true }),
-      axios.get('/api/pedidos/', { withCredentials: true }),
+      api.get('/api/profile/'),
+      api.get('/api/pedidos/'),
     ])
       .then(([meRes, oRes]) => {
         setMe(meRes.data || null)
@@ -70,9 +68,7 @@ export default function LogisticsDashboard() {
 
   const patchOrder = async (id, patch) => {
     try {
-      const { data: updated } = await axios.patch(`/api/pedidos/${id}/`, patch, {
-        withCredentials: true,
-      })
+      const { data: updated } = await api.patch(`/api/pedidos/${id}/`, patch)
       setOrders(cur => cur.map(o => (o.id === id ? { ...o, ...updated } : o)))
     } catch {
       setError('Error al actualizar pedido.')
@@ -124,7 +120,6 @@ export default function LogisticsDashboard() {
       </span>
     )
   }
-
   const renderEntregaEstimada = (o) => {
     if (!o.entrega_estimada) return null
     try {
@@ -200,6 +195,7 @@ export default function LogisticsDashboard() {
           </div>
         </div>
 
+
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-header text-white" style={{ backgroundColor: '#5A2E1B' }}>
             Pedidos disponibles (Pendiente)
@@ -245,6 +241,7 @@ export default function LogisticsDashboard() {
             </table>
           </div>
         </div>
+
 
         <div className="card shadow-sm border-0">
           <div className="card-header text-white" style={{ backgroundColor: '#5A2E1B' }}>
@@ -306,6 +303,7 @@ export default function LogisticsDashboard() {
             </table>
           </div>
         </div>
+
 
         <div className="card shadow-sm border-0 mt-4">
           <div className="card-header text-white" style={{ backgroundColor: '#5A2E1B' }}>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function StaffDetail() {
   const { id } = useParams()
@@ -14,13 +14,20 @@ export default function StaffDetail() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    axios.get(`/api/staff/${id}/`, { withCredentials: true })
-      .then(({ data }) => {
+    let alive = true
+    ;(async () => {
+      try {
+        const { data } = await api.get(`/api/staff/${id}/`)
+        if (!alive) return
         setUser(data)
         setRole(data.role)
-      })
-      .catch(() => setError('No se pudo cargar la información del usuario.'))
-      .finally(() => setLoading(false))
+      } catch {
+        if (alive) setError('No se pudo cargar la información del usuario.')
+      } finally {
+        if (alive) setLoading(false)
+      }
+    })()
+    return () => { alive = false }
   }, [id])
 
   const handleSubmit = async e => {
@@ -28,13 +35,9 @@ export default function StaffDetail() {
     setFlash('')
     setError('')
     try {
-      await axios.patch(
-        `/api/staff/${id}/`,
-        { role },
-        { withCredentials: true }
-      )
+      await api.patch(`/api/staff/${id}/`, { role })
       setFlash('Rol actualizado correctamente.')
-      setTimeout(() => navigate('/staff', { state: { successMessage: 'Rol actualizado.' } }), 1000)
+      setTimeout(() => navigate('/staff', { state: { successMessage: 'Rol actualizado.' } }), 800)
     } catch {
       setError('Error al actualizar el rol.')
     }
@@ -43,9 +46,7 @@ export default function StaffDetail() {
   if (loading) {
     return (
       <Base title="Información del Usuario">
-        <div className="container my-5 text-center">
-          <p>Cargando detalles…</p>
-        </div>
+        <div className="container my-5 text-center"><p>Cargando detalles…</p></div>
       </Base>
     )
   }

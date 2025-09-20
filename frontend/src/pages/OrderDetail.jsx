@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 const STATUS_LABELS = {
   pendiente:  'Pendiente',
@@ -10,7 +10,6 @@ const STATUS_LABELS = {
   entregado:  'Entregado',
   cancelado:  'Cancelado',
 }
-
 const STATUS_BG = {
   pendiente:  '#6c757d',
   en_proceso: '#0d6efd',
@@ -27,16 +26,16 @@ export default function OrderDetail() {
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    Promise.all([
-      axios.get('/api/user/',          { withCredentials: true }),
-      axios.get(`/api/pedidos/${id}/`, { withCredentials: true })
-    ])
+    let alive = true
+    Promise.all([api.get('/api/user/'), api.get(`/api/pedidos/${id}/`)])
       .then(([userRes, pedidoRes]) => {
+        if (!alive) return
         setUser(userRes.data)
         setPedido(pedidoRes.data)
       })
-      .catch(() => setError('Error al cargar datos.'))
-      .finally(() => setLoading(false))
+      .catch(() => alive && setError('Error al cargar datos.'))
+      .finally(() => alive && setLoading(false))
+    return () => { alive = false }
   }, [id])
 
   if (loading) {
@@ -78,49 +77,31 @@ export default function OrderDetail() {
           <div className="card-body">
             <p><strong>Número de Pedido:</strong> {pedido.numero_pedido}</p>
             <p><strong>Usuario:</strong> {pedido.usuario?.username ?? '—'}</p>
-            <p>
-              <strong>Fecha:</strong>{' '}
-              {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString('es-ES') : '—'}
-            </p>
-            <p>
-              <strong>Estado:</strong>{' '}
-              <span className="badge" style={{ backgroundColor: statusBg }}>
-                {statusLabel}
-              </span>
-            </p>
+            <p><strong>Fecha:</strong> {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString('es-ES') : '—'}</p>
+            <p><strong>Estado:</strong> <span className="badge" style={{ backgroundColor: statusBg }}>{statusLabel}</span></p>
             <p><strong>Logística:</strong> {assignedName}</p>
 
             <hr />
             <h5>Productos:</h5>
             <table className="table table-striped">
               <thead className="text-white" style={{ backgroundColor: '#A0522D' }}>
-                <tr>
-                  <th>Producto</th>
-                  <th>Categoría</th>
-                  <th>Cantidad</th>
-                </tr>
+                <tr><th>Producto</th><th>Categoría</th><th>Cantidad</th></tr>
               </thead>
               <tbody>
                 {detalles.length === 0 ? (
                   <tr><td colSpan="3" className="text-center text-muted">Sin ítems.</td></tr>
-                ) : (
-                  detalles.map(d => (
-                    <tr key={d.id}>
-                      <td>{d.producto?.nombre ?? '—'}</td>
-                      <td>{d.producto?.categoria?.nombre ?? '—'}</td>
-                      <td>{d.cantidad}</td>
-                    </tr>
-                  ))
-                )}
+                ) : detalles.map(d => (
+                  <tr key={d.id}>
+                    <td>{d.producto?.nombre ?? '—'}</td>
+                    <td>{d.producto?.categoria?.nombre ?? '—'}</td>
+                    <td>{d.cantidad}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
 
             <div className="text-center mt-4">
-              <Link
-                to={backPath}
-                className="btn text-white fw-semibold"
-                style={{ backgroundColor: '#8B4513', padding: '0.5rem 1.5rem', borderRadius: '0.25rem' }}
-              >
+              <Link to={backPath} className="btn text-white fw-semibold" style={{ backgroundColor: '#8B4513', padding: '0.5rem 1.5rem', borderRadius: '0.25rem' }}>
                 Volver
               </Link>
             </div>

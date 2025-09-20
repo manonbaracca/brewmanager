@@ -1,29 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Base from '@/components/Base';
+import React, { useState, useEffect } from 'react'
+import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function Logs() {
-  const [logs, setLogs]           = useState([]);
-  const [users, setUsers]         = useState([]);
-  const [userFilter, setUserFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [logs, setLogs] = useState([])
+  const [users, setUsers] = useState([])
+  const [userFilter, setUserFilter] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
 
   useEffect(() => {
-    axios.get('/api/staff/', { withCredentials: true })
-      .then(res => setUsers(res.data))
-      .catch(console.error);
-  }, []);
+    api.get('/api/staff/')
+      .then(({ data }) => setUsers(Array.isArray(data) ? data : []))
+      .catch(console.error)
+  }, [])
 
   const fetchLogs = () => {
-    const params = {};
-    if (userFilter) params.user_id = userFilter;
-    if (dateFilter) params.date    = dateFilter;
-    axios.get('/api/audit-logs/', { params, withCredentials: true })
-      .then(res => setLogs(res.data))
-      .catch(console.error);
-  };
+    const params = {}
+    if (userFilter) params.user_id = userFilter
+    if (dateFilter) params.date = dateFilter
 
-  useEffect(fetchLogs, [userFilter, dateFilter]);
+    api.get('/api/audit-logs/', { params })
+      .then(({ data }) => setLogs(Array.isArray(data) ? data : []))
+      .catch(console.error)
+  }
+
+  useEffect(fetchLogs, [userFilter, dateFilter])
 
   return (
     <Base title="Logs de Auditoría">
@@ -64,18 +65,18 @@ export default function Logs() {
               <th>Descripción</th>
             </tr>
           </thead>
-          <tbody>
-            {logs.map(log => (
-              <tr key={log.id}>
-                <td>{new Date(log.timestamp).toLocaleString('es-ES')}</td>
-                <td>{log.user || '—'}</td>
-                <td>{log.action}</td>
-                <td>{log.description}</td>
-              </tr>
-            ))}
-          </tbody>
+        <tbody>
+          {logs.map(log => (
+            <tr key={log.id}>
+              <td>{new Date(log.timestamp).toLocaleString('es-ES')}</td>
+              <td>{log.user || '—'}</td>
+              <td>{log.action}</td>
+              <td>{log.description}</td>
+            </tr>
+          ))}
+        </tbody>
         </table>
       </div>
     </Base>
-  );
+  )
 }

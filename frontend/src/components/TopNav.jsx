@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react'
+import { Link } from 'react-router-dom'
 
 export default function TopNav({
   productosSinStock = [],
@@ -81,5 +81,5 @@ export default function TopNav({
         </div>
       </div>
     </div>
-  );
+  )
 }

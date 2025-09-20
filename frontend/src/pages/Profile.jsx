@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
 import { Link, useLocation } from 'react-router-dom'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function Profile() {
   const [profile, setProfile] = useState(null)
@@ -9,14 +9,21 @@ export default function Profile() {
   const [flash, setFlash] = useState('')
 
   useEffect(() => {
-    axios.get('/api/profile/')
-      .then(res => setProfile(res.data))
-      .catch(err => console.error(err))
+    let alive = true
+    ;(async () => {
+      try {
+        const { data } = await api.get('/api/profile/')
+        if (alive) setProfile(data)
+      } catch (e) {
+        console.error(e)
+      }
+    })()
 
     if (location.state?.successMessage) {
       setFlash(location.state.successMessage)
       window.history.replaceState({}, document.title)
     }
+    return () => { alive = false }
   }, [location.state])
 
   if (!profile) {
@@ -79,14 +86,8 @@ export default function Profile() {
 
               <div className="card-body" style={{ backgroundColor: '#F5DEB3', color: '#5A2E1B', padding: '2rem' }}>
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h4 className="mb-0" style={{ fontWeight: 600 }}>
-                    Información del Perfil
-                  </h4>
-                  <Link
-                    to="/profile/update"
-                    className="btn btn-sm"
-                    style={{ backgroundColor: '#5A2E1B', color: '#FFF', fontWeight: 500 }}
-                  >
+                  <h4 className="mb-0" style={{ fontWeight: 600 }}>Información del Perfil</h4>
+                  <Link to="/profile/update" className="btn btn-sm" style={{ backgroundColor: '#5A2E1B', color: '#FFF', fontWeight: 500 }}>
                     <i className="fas fa-edit" /> Editar
                   </Link>
                 </div>
@@ -94,30 +95,11 @@ export default function Profile() {
 
                 <table className="table table-borderless mb-0 w-100" style={{ background: 'transparent' }}>
                   <tbody>
-                    <tr>
-                      <th scope="row" style={{ width: '30%', fontWeight: 600 }}>Nombre:</th>
-                      <td>{username}</td>
-                    </tr>
-
-                    <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>Email:</th>
-                      <td>{email}</td>
-                    </tr>
-
-                    <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>Teléfono:</th>
-                      <td>{telefono || '—'}</td>
-                    </tr>
-
-                    <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>Dirección:</th>
-                      <td>{direccion || '—'}</td>
-                    </tr>
-
-                    <tr>
-                      <th scope="row" style={{ fontWeight: 600 }}>Rol:</th>
-                      <td>{roleLabel}</td>
-                    </tr>
+                    <tr><th style={{ width:'30%', fontWeight:600 }}>Nombre:</th><td>{username}</td></tr>
+                    <tr><th style={{ fontWeight:600 }}>Email:</th><td>{email}</td></tr>
+                    <tr><th style={{ fontWeight:600 }}>Teléfono:</th><td>{telefono || '—'}</td></tr>
+                    <tr><th style={{ fontWeight:600 }}>Dirección:</th><td>{direccion || '—'}</td></tr>
+                    <tr><th style={{ fontWeight:600 }}>Rol:</th><td>{roleLabel}</td></tr>
                   </tbody>
                 </table>
 

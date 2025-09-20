@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
-import axios from 'axios'
 import Base from '@/components/Base'
+import api from '@/lib/api'
 
 export default function StaffDelete() {
   const { id } = useParams()
@@ -15,40 +15,40 @@ export default function StaffDelete() {
   const successMessage = location.state?.successMessage || ''
 
   useEffect(() => {
-    axios.get(`/api/staff/${id}/`, { withCredentials: true })
-      .then(({ data }) => {
-        setUsername(data.username)
-      })
-      .catch(() => {
-        setError('No se pudo cargar la información del usuario.')
-      })
-      .finally(() => setLoading(false))
+    let alive = true
+    ;(async () => {
+      try {
+        const { data } = await api.get(`/api/staff/${id}/`)
+        if (alive) setUsername(data.username)
+      } catch {
+        if (alive) setError('No se pudo cargar la información del usuario.')
+      } finally {
+        if (alive) setLoading(false)
+      }
+    })()
+    return () => { alive = false }
   }, [id])
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setDeleting(true)
-    axios.delete(`/api/staff/${id}/`, { withCredentials: true })
-      .then(() => {
-        navigate('/staff', {
-          state: { successMessage: `Usuario "${username}" eliminado exitosamente.` }
-        })
+    try {
+      await api.delete(`/api/staff/${id}/`)
+      navigate('/staff', {
+        state: { successMessage: `Usuario "${username}" eliminado exitosamente.` }
       })
-      .catch(() => {
-        setError('Error al eliminar el usuario.')
-        setDeleting(false)
-      })
+    } catch {
+      setError('Error al eliminar el usuario.')
+      setDeleting(false)
+    }
   }
 
   if (loading) {
     return (
       <Base title="Eliminar Usuario">
-        <div className="container my-5">
-          <p>Cargando datos…</p>
-        </div>
+        <div className="container my-5"><p>Cargando datos…</p></div>
       </Base>
     )
   }
-
   return (
     <Base title="Confirmar Eliminación">
       <div className="container my-4">
