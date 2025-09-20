@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
 import { Link, useLocation } from 'react-router-dom'
 import Base from '@/components/Base'
+import api from '@/lib/api' 
 
 const STATUS_LABELS = {
   pendiente:  'Pendiente',
@@ -37,22 +38,33 @@ export default function StaffIndex() {
   }, [location.state])
 
   useEffect(() => {
-    axios
-      .get('http://localhost:8000/api/profile/', { withCredentials: true })
-      .then(res => setUser(res.data))
-      .catch(() => setError('No se pudo cargar su perfil.'))
+    let alive = true
+    ;(async () => {
+      try {
+        const { data } = await api.get('/api/profile/')
+        if (alive) setUser(data)
+      } catch {
+        if (alive) setError('No se pudo cargar su perfil.')
+      }
+    })()
+    return () => { alive = false }
   }, [])
 
   useEffect(() => {
     if (!user) return
+    let alive = true
     setLoading(true)
-    axios
-      .get(`http://localhost:8000/api/pedidos/?usuario_id=${user.id}`, {
-        withCredentials: true
-      })
-      .then(res => setPedidos(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setError('No se pudieron cargar los pedidos.'))
-      .finally(() => setLoading(false))
+    ;(async () => {
+      try {
+        const { data } = await api.get(`/api/pedidos/?usuario_id=${user.id}`)
+        if (alive) setPedidos(Array.isArray(data) ? data : [])
+      } catch {
+        if (alive) setError('No se pudieron cargar los pedidos.')
+      } finally {
+        if (alive) setLoading(false)
+      }
+    })()
+    return () => { alive = false }
   }, [user])
 
   const renderStatusBadge = (statusRaw) => {
