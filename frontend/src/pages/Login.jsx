@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Base from '@/components/Base'
-import api from '@/lib/api'  
+import api from '@/lib/api' 
 
 export default function Login() {
   const [step, setStep] = useState(1)
@@ -13,7 +13,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const pushAlert = (msg, type='danger') =>
+  const pushAlert = (msg, type = 'danger') =>
     setAlerts(cur => [...cur, { msg, type }])
 
   const handleChange = e => {
@@ -25,27 +25,29 @@ export default function Login() {
     setAlerts([])
     setLoading(true)
     try {
-      await api.get('/api/csrf/')
-
       const payload = new URLSearchParams({
         username: credentials.username,
         password: credentials.password,
       })
 
-      const { data } = await api.post('/api/login/', payload, {
+      const { data, status } = await api.post('/api/login/', payload, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         validateStatus: () => true, 
       })
 
-      if (data?.otp_required && data.otp_id) {
+      if (status === 202 && data?.otp_required && data.otp_id) {
         setOtpId(data.otp_id)
         setMaskedEmail(data.masked_email || null)
         setStep(2)
+      } else if (status === 400) {
+        const errs = Object.values(data?.errors || {}).flat()
+        if (errs.length) errs.forEach(m => pushAlert(String(m)))
+        else pushAlert('Usuario o contraseña incorrectos.')
       } else {
         pushAlert('No se pudo iniciar sesión.')
       }
     } catch {
-      pushAlert('Usuario o contraseña incorrectos.')
+      pushAlert('No se pudo iniciar sesión.')
     } finally {
       setLoading(false)
     }
@@ -56,21 +58,24 @@ export default function Login() {
     setAlerts([])
     setLoading(true)
     try {
-      await api.get('/api/csrf/')
-
       const payload = new URLSearchParams({ otp_id: otpId, code: otpCode })
 
-      await api.post('/api/login/verify/', payload, {
+      const { data, status } = await api.post('/api/login/verify/', payload, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        validateStatus: () => true,
       })
 
+      if (status >= 400) {
+        pushAlert(data?.detail || 'Código incorrecto o vencido.')
+        return
+      }
+
       const { data: profile } = await api.get('/api/profile/')
-      const nextPath =
-        profile.is_superuser
-          ? '/dashboard'
-          : profile.role === 'logistica'
-            ? '/logistics'
-            : '/staff-index'
+      const nextPath = profile.is_superuser
+        ? '/dashboard'
+        : profile.role === 'logistica'
+          ? '/logistics'
+          : '/staff-index'
       navigate(nextPath)
     } catch {
       pushAlert('Código incorrecto o vencido.')
@@ -99,13 +104,35 @@ export default function Login() {
               <form onSubmit={handleSubmitStep1}>
                 <div className="mb-3">
                   <label htmlFor="username" className="form-label">Usuario</label>
-                  <input id="username" name="username" className="form-control" value={credentials.username} onChange={handleChange} required autoComplete="username" />
+                  <input
+                    id="username"
+                    name="username"
+                    className="form-control"
+                    value={credentials.username}
+                    onChange={handleChange}
+                    required
+                    autoComplete="username"
+                  />
                 </div>
                 <div className="mb-3">
                   <label htmlFor="password" className="form-label">Contraseña</label>
-                  <input id="password" name="password" type="password" className="form-control" value={credentials.password} onChange={handleChange} required autoComplete="current-password" />
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    className="form-control"
+                    value={credentials.password}
+                    onChange={handleChange}
+                    required
+                    autoComplete="current-password"
+                  />
                 </div>
-                <button type="submit" className="btn w-100 text-white fw-bold mt-3" style={{ backgroundColor: '#8B4513' }} disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn w-100 text-white fw-bold mt-3"
+                  style={{ backgroundColor: '#8B4513' }}
+                  disabled={loading}
+                >
                   {loading ? 'Enviando código…' : 'Continuar'}
                 </button>
                 <div className="mt-3 text-center">
@@ -121,9 +148,23 @@ export default function Login() {
                 </div>
                 <div className="mb-3">
                   <label htmlFor="otp" className="form-label">Código de verificación</label>
-                  <input id="otp" className="form-control" value={otpCode} onChange={e => setOtpCode(e.target.value)} required inputMode="numeric" maxLength={6} placeholder="######" />
+                  <input
+                    id="otp"
+                    className="form-control"
+                    value={otpCode}
+                    onChange={e => setOtpCode(e.target.value)}
+                    required
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="######"
+                  />
                 </div>
-                <button type="submit" className="btn w-100 text-white fw-bold mt-3" style={{ backgroundColor: '#8B4513' }} disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn w-100 text-white fw-bold mt-3"
+                  style={{ backgroundColor: '#8B4513' }}
+                  disabled={loading}
+                >
                   {loading ? 'Verificando…' : 'Ingresar'}
                 </button>
               </form>
