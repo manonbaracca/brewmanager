@@ -12,11 +12,8 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY', default='dev-only-key-no-usar-en-produccion')
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = [
-    "localhost", "127.0.0.1",
-    os.environ.get("RENDER_HOST", ""),
-    ".onrender.com",
-]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".onrender.com"]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -154,19 +151,19 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 }
-
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    os.environ.get("FRONTEND_ORIGIN", "https://brewmanager-viu.vercel.app"),
+    "https://brewmanager-viu.vercel.app",
 ]        
-CORS_ALLOW_CREDENTIALS = True
+
 
 CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    os.environ.get("FRONTEND_ORIGIN", "https://brewmanager-viu.vercel.app"),
+    "https://brewmanager-viu.vercel.app",
 ]
 
 CSRF_COOKIE_SECURE = True

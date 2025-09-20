@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
+from django.middleware.csrf import get_token
 
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
@@ -22,8 +23,10 @@ from dashboard.utils import log_action
 
 @ensure_csrf_cookie
 def csrf_api(request):
-    return JsonResponse({"detail": "CSRF cookie set"})
-
+    return JsonResponse({
+        "detail": "CSRF cookie set",
+        "csrfToken": get_token(request),
+    })
 @ensure_csrf_cookie
 def register_api(request):
     if request.method != 'POST':
