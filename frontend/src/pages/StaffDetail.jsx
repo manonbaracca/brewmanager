@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Base from '@/components/Base'
-import api from '@/lib/api'
+import api, { initCsrf } from '@/lib/api'  
 
 export default function StaffDetail() {
   const { id } = useParams()
@@ -37,10 +37,8 @@ export default function StaffDetail() {
     setFlash('')
     setError('')
     try {
-      await api.get('/api/csrf/')
-
-      const { data } = await api.patch(`/api/staff/${id}/`, { role })
-
+      await initCsrf()                 
+      await api.patch(`/api/staff/${id}/`, { role })
       setFlash('Rol actualizado correctamente.')
       setTimeout(
         () => navigate('/staff', { state: { successMessage: 'Rol actualizado.' } }),

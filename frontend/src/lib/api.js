@@ -1,44 +1,44 @@
-import axios from 'axios';
+import axios from 'axios'
 
-const rawBase =
-  (import.meta.env?.VITE_API_BASE) ||
-  (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')
-    ? 'https://brewmanager.onrender.com'
-    : 'http://localhost:8000');
-
-const BASE_URL = rawBase.replace(/\/$/, '');
+const RAW_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const BASE_URL = RAW_BASE.replace(/\/+$/, '')
 
 const api = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
   xsrfCookieName: 'csrftoken',
   xsrfHeaderName: 'X-CSRFToken',
-});
+})
 
-let CSRF_TOKEN = null;
+let CSRF_TOKEN = null
 
 export async function initCsrf() {
   try {
-    const { data } = await api.get('/api/csrf/', { withCredentials: true });
-    CSRF_TOKEN = data?.csrfToken || null;
-  } catch {
-    // no-op
-  }
+    const { data } = await api.get('/api/csrf/')
+    const t = data?.csrfToken
+    if (t) {
+      CSRF_TOKEN = t
+      api.defaults.headers.common['X-CSRFToken'] = t
+    }
+  } catch {}
 }
 
-api.interceptors.request.use(async (config) => {
-  const method = (config.method || 'get').toLowerCase();
-  if (['post', 'put', 'patch', 'delete'].includes(method)) {
-    if (!CSRF_TOKEN) await initCsrf();
-    if (CSRF_TOKEN) {
-      config.headers = {
-        ...(config.headers || {}),
-        'X-CSRFToken': CSRF_TOKEN,
-        'X-Requested-With': 'XMLHttpRequest',
-      };
-    }
+api.interceptors.request.use((config) => {
+  const method = (config.method || 'get').toLowerCase()
+  if (['post','put','patch','delete'].includes(method) && CSRF_TOKEN) {
+    config.headers = config.headers || {}
+    config.headers['X-CSRFToken'] = CSRF_TOKEN
+    config.headers['X-Requested-With'] = 'XMLHttpRequest'
   }
-  return config;
-});
+  return config
+})
 
-export default api;
+api.interceptors.response.use((res) => {
+  if (res?.config?.url?.endsWith('/api/csrf/') && res.data?.csrfToken) {
+    CSRF_TOKEN = res.data.csrfToken
+    api.defaults.headers.common['X-CSRFToken'] = CSRF_TOKEN
+  }
+  return res
+})
+
+export default api
