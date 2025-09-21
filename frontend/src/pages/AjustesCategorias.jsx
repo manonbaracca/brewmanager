@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Base from '@/components/Base'
 import api from '@/lib/api'
 
 export default function AjustesCategorias() {
   const [categorias, setCategorias] = useState([])
-  const [nuevaCat, setNuevaCat]   = useState('')
-  const [alerts, setAlerts]       = useState([])
-  const navigate                  = useNavigate()
+  const [nuevaCat, setNuevaCat] = useState('')
+  const [alerts, setAlerts] = useState([])
 
   useEffect(() => {
     fetchCategorias()
@@ -23,12 +22,20 @@ export default function AjustesCategorias() {
   }
 
   const handleGuardar = async (id, nombre) => {
+    const newName = String(nombre || '').trim()
+    const original = categorias.find(c => c.id === id)?.nombre || ''
+
+    if (!newName || newName === original) {
+      setAlerts(cur => [...cur, { type: 'info', msg: 'No hay cambios para guardar.' }])
+      return
+    }
+
     try {
-      await api.put(`/api/categorias/${id}/`, { nombre: nombre.trim() })
-      setAlerts(cur => [...cur, { type: 'success', msg: 'Categoría actualizada correctamente.' }])
+      await api.put(`/api/categorias/${id}/`, { nombre: newName })
+      setAlerts([{ type: 'success', msg: 'Categoría actualizada correctamente.' }])
       fetchCategorias()
     } catch {
-      setAlerts(cur => [...cur, { type: 'danger', msg: 'No se pudo actualizar la categoría.' }])
+      setAlerts([{ type: 'danger', msg: 'No se pudo actualizar la categoría.' }])
     }
   }
 
@@ -36,9 +43,9 @@ export default function AjustesCategorias() {
     try {
       await api.delete(`/api/categorias/${id}/`)
       setCategorias(cats => cats.filter(c => c.id !== id))
-      setAlerts(cur => [...cur, { type: 'success', msg: 'Categoría eliminada correctamente.' }])
+      setAlerts([{ type: 'success', msg: 'Categoría eliminada correctamente.' }])
     } catch {
-      setAlerts(cur => [...cur, { type: 'danger', msg: 'No se pudo eliminar la categoría.' }])
+      setAlerts([{ type: 'danger', msg: 'No se pudo eliminar la categoría.' }])
     }
   }
 
@@ -70,7 +77,9 @@ export default function AjustesCategorias() {
             role="alert"
           >
             {a.msg}
-            <button type="button" className="btn-close"
+            <button
+              type="button"
+              className="btn-close"
               onClick={() => setAlerts(cur => cur.filter((_, idx) => idx !== i))}
             />
           </div>
@@ -96,24 +105,26 @@ export default function AjustesCategorias() {
                       <tr key={cat.id}>
                         <td>
                           <input
+                            id={`cat-${cat.id}`}
                             type="text"
                             className="form-control"
                             defaultValue={cat.nombre}
-                            onBlur={e => handleGuardar(cat.id, e.target.value)}
                           />
                         </td>
                         <td className="text-center">
                           <button
+                            type="button"
                             className="btn btn-sm"
                             style={{ backgroundColor: '#D4A373', color: '#FFF', marginRight: '0.5rem' }}
                             onClick={() => {
-                              const input = document.querySelector(`input[value="${cat.nombre}"]`)
+                              const input = document.getElementById(`cat-${cat.id}`)
                               handleGuardar(cat.id, input?.value ?? cat.nombre)
                             }}
                           >
                             Guardar
                           </button>
                           <button
+                            type="button"
                             className="btn btn-sm"
                             style={{ backgroundColor: '#A73E1C', color: '#FFF' }}
                             onClick={() => handleEliminar(cat.id)}

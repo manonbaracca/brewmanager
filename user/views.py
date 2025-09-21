@@ -186,15 +186,19 @@ def staff_list_api(request):
 def staff_detail_api(request, pk):
     trabajador = get_object_or_404(User, pk=pk, is_superuser=False)
 
+    profile, _ = Profile.objects.get_or_create(user=trabajador, defaults={'role': 'cliente'})
+
     if request.method == 'GET':
         return Response(StaffSerializer(trabajador).data)
 
     if request.method == 'PATCH':
-        new_role = request.data.get('role')
-        if new_role not in dict(Profile.ROLE_CHOICES):
+        new_role = (request.data.get('role') or '').strip().lower()
+        valid_roles = {k for k, _ in Profile.ROLE_CHOICES}
+        if new_role not in valid_roles:
             return Response({'role': 'Rol inválido'}, status=400)
-        trabajador.profile.role = new_role
-        trabajador.profile.save()
+
+        profile.role = new_role
+        profile.save(update_fields=['role'])
         log_action(request.user, 'user_edit', f'Cambió rol de {trabajador.username} a {new_role}')
         return Response({'role': new_role}, status=200)
 
