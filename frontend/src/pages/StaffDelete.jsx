@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import Base from '@/components/Base'
-import api from '@/lib/api'
+import api, { initCsrf } from '@/lib/api'
 
 export default function StaffDelete() {
   const { id } = useParams()
@@ -31,13 +31,23 @@ export default function StaffDelete() {
 
   const handleDelete = async () => {
     setDeleting(true)
+    setError('')
     try {
-      await api.delete(`/api/staff/${id}/`)
+      // Asegura cookie + header CSRF antes de un método no seguro
+      await initCsrf()
+      await api.delete(`/api/staff/${id}/`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      })
       navigate('/staff', {
         state: { successMessage: `Usuario "${username}" eliminado exitosamente.` }
       })
-    } catch {
-      setError('Error al eliminar el usuario.')
+    } catch (err) {
+      const detail =
+        err?.response?.data?.detail ||
+        (err?.response?.status === 403
+          ? 'CSRF inválido o sesión expirada. Actualiza la página e intenta de nuevo.'
+          : null)
+      setError(detail || 'Error al eliminar el usuario.')
       setDeleting(false)
     }
   }
@@ -49,6 +59,7 @@ export default function StaffDelete() {
       </Base>
     )
   }
+
   return (
     <Base title="Confirmar Eliminación">
       <div className="container my-4">
@@ -103,6 +114,9 @@ export default function StaffDelete() {
                     {deleting ? 'Eliminando…' : 'Eliminar'}
                   </button>
                 </div>
+                {successMessage ? (
+                  <div className="visually-hidden">{successMessage}</div>
+                ) : null}
               </div>
             </div>
           </div>
