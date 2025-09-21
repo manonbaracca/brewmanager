@@ -1,21 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Base from '@/components/Base'
-import api from '@/lib/api'  
+import api from '@/lib/api'
 
 const STATUS_LABELS = {
-  pendiente:   'Pendiente',
-  en_proceso:  'En proceso',
-  en_camino:   'En camino',
-  entregado:   'Entregado',
-  cancelado:   'Cancelado',
+  pendiente:  'Pendiente',
+  en_proceso: 'En proceso',
+  en_camino:  'En camino',
+  entregado:  'Entregado',
+  cancelado:  'Cancelado',
 }
 const STATUS_BG = {
-  pendiente:   '#6c757d',
-  en_proceso:  '#0d6efd',
-  en_camino:   '#17a2b8',
-  entregado:   '#198754',
-  cancelado:   '#6c757d',
+  pendiente:  '#6c757d',
+  en_proceso: '#0d6efd',
+  en_camino:  '#17a2b8',
+  entregado:  '#198754',
+  cancelado:  '#6c757d',
 }
+
 const normalizeStatus = (s) => {
   const key = String(s || '').toLowerCase()
   const map = {
@@ -53,10 +54,7 @@ export default function LogisticsDashboard() {
 
   const fetchAll = () => {
     setLoading(true)
-    Promise.all([
-      api.get('/api/profile/'),
-      api.get('/api/pedidos/'),
-    ])
+    Promise.all([api.get('/api/profile/'), api.get('/api/pedidos/')])
       .then(([meRes, oRes]) => {
         setMe(meRes.data || null)
         setOrders(Array.isArray(oRes.data) ? oRes.data : [])
@@ -83,9 +81,7 @@ export default function LogisticsDashboard() {
     if (next === 'en_camino') {
       const val = window.prompt('¿Tiempo estimado de entrega (en días)?', '')
       const patch = { status: 'en_camino' }
-      if (val && !isNaN(Number(val))) {
-        patch.delivery_days = Math.max(1, Number(val))
-      }
+      if (val && !isNaN(Number(val))) patch.delivery_days = Math.max(1, Number(val))
       await patchOrder(o.id, patch)
       return
     }
@@ -96,6 +92,7 @@ export default function LogisticsDashboard() {
     () => orders.filter(o => normalizeStatus(o.status) === 'pendiente'),
     [orders]
   )
+
   const enCurso = useMemo(
     () => orders.filter(o => {
       const s = normalizeStatus(o.status)
@@ -103,13 +100,17 @@ export default function LogisticsDashboard() {
     }),
     [orders]
   )
-  const aceptadosFiltrados = useMemo(
-    () => orders.filter(o => isAccepted(o.status) && matchByDate(o.fecha, filtroFecha)),
-    [orders, filtroFecha]
+
+  const esMio = (o) => (o?.assigned_to?.name || '') === (me?.username || '')
+  const enCursoMios = useMemo(() => enCurso.filter(esMio), [enCurso, me])
+
+  const aceptadosMiosFiltrados = useMemo(
+    () => orders.filter(o => isAccepted(o.status) && esMio(o) && matchByDate(o.fecha, filtroFecha)),
+    [orders, filtroFecha, me]
   )
-  const entregadosFiltrados = useMemo(
-    () => orders.filter(o => normalizeStatus(o.status) === 'entregado' && matchByDate(o.fecha, filtroFecha)),
-    [orders, filtroFecha]
+  const entregadosMiosFiltrados = useMemo(
+    () => orders.filter(o => normalizeStatus(o.status) === 'entregado' && esMio(o) && matchByDate(o.fecha, filtroFecha)),
+    [orders, filtroFecha, me]
   )
 
   const renderBadge = (status) => {
@@ -153,7 +154,7 @@ export default function LogisticsDashboard() {
 
         <div className="card shadow-sm border-0 mb-4">
           <div className="card-body d-flex flex-wrap align-items-center justify-content-between" style={{ gap: 12 }}>
-            <div className="d-flex align-items-center" style={{ gap: 8 }}>
+            <div className="toolbar d-flex align-items-center" style={{ gap: 8 }}>
               <label className="fw-bold mb-0">Periodo:</label>
               <select
                 className="form-select"
@@ -166,43 +167,35 @@ export default function LogisticsDashboard() {
                 ))}
               </select>
             </div>
-            <div className="d-flex flex-wrap" style={{ gap: 12 }}>
-              <div className="card shadow-sm" style={{ minWidth: 160 }}>
-                <div className="card-body text-center">
-                  <div className="fw-semibold text-muted">Disponibles</div>
-                  <div className="fs-4">{pendientes.length}</div>
-                </div>
+
+            <div className="kpi-grid">
+              <div className="kpi">
+                <div className="label">Disponibles</div>
+                <div className="value">{pendientes.length}</div>
               </div>
-              <div className="card shadow-sm" style={{ minWidth: 160 }}>
-                <div className="card-body text-center">
-                  <div className="fw-semibold text-muted">En curso</div>
-                  <div className="fs-4">{enCurso.length}</div>
-                </div>
+              <div className="kpi">
+                <div className="label">En curso</div>
+                <div className="value">{enCursoMios.length}</div>
               </div>
-              <div className="card shadow-sm" style={{ minWidth: 160 }}>
-                <div className="card-body text-center">
-                  <div className="fw-semibold text-muted">Aceptados </div>
-                  <div className="fs-4">{aceptadosFiltrados.length}</div>
-                </div>
+              <div className="kpi">
+                <div className="label">Aceptados</div>
+                <div className="value">{aceptadosMiosFiltrados.length}</div>
               </div>
-              <div className="card shadow-sm" style={{ minWidth: 160 }}>
-                <div className="card-body text-center">
-                  <div className="fw-semibold text-muted">Entregados </div>
-                  <div className="fs-4">{entregadosFiltrados.length}</div>
-                </div>
+              <div className="kpi">
+                <div className="label">Entregados</div>
+                <div className="value">{entregadosMiosFiltrados.length}</div>
               </div>
             </div>
           </div>
         </div>
 
-
         <div className="card shadow-sm border-0 mb-4">
-          <div className="card-header text-white" style={{ backgroundColor: '#5A2E1B' }}>
+          <div className="card-header text-white bg-brand-1">
             Pedidos disponibles (Pendiente)
           </div>
           <div className="card-body p-0">
-            <table className="table mb-0">
-              <thead className="text-white text-center" style={{ backgroundColor: '#8B4513' }}>
+            <table className="table table-hover table-soft table-sticky mb-0">
+              <thead className="text-white text-center bg-brand-2">
                 <tr>
                   <th>N° Pedido</th>
                   <th>Cliente</th>
@@ -221,17 +214,9 @@ export default function LogisticsDashboard() {
                     <td>{o.numero_pedido}</td>
                     <td>{o.usuario?.username ?? '—'}</td>
                     <td>{o.fecha ? new Date(o.fecha).toLocaleDateString('es-ES') : '—'}</td>
+                    <td><em className="text-muted">{me?.username ? `Se asignará a ${me.username}` : '—'}</em></td>
                     <td>
-                      <em className="text-muted">
-                        {me?.username ? `Se asignará a ${me.username}` : '—'}
-                      </em>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-sm text-white"
-                        style={{ backgroundColor: '#198754' }}
-                        onClick={() => aceptarPedido(o)}
-                      >
+                      <button className="btn btn-sm btn-success" onClick={() => aceptarPedido(o)}>
                         Aceptar
                       </button>
                     </td>
@@ -242,14 +227,13 @@ export default function LogisticsDashboard() {
           </div>
         </div>
 
-
         <div className="card shadow-sm border-0">
-          <div className="card-header text-white" style={{ backgroundColor: '#5A2E1B' }}>
+          <div className="card-header text-white bg-brand-1">
             Pedidos en curso (En proceso / En camino)
           </div>
           <div className="card-body p-0">
-            <table className="table mb-0">
-              <thead className="text-white text-center" style={{ backgroundColor: '#8B4513' }}>
+            <table className="table table-hover table-soft table-sticky mb-0">
+              <thead className="text-white text-center bg-brand-2">
                 <tr>
                   <th>N° Pedido</th>
                   <th>Cliente</th>
@@ -259,11 +243,11 @@ export default function LogisticsDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {enCurso.length === 0 ? (
+                {enCursoMios.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-center text-muted py-4">No hay pedidos en curso.</td>
                   </tr>
-                ) : enCurso.map(o => {
+                ) : enCursoMios.map(o => {
                   const status = normalizeStatus(o.status)
                   return (
                     <tr key={o.id} className="text-center">
@@ -273,25 +257,15 @@ export default function LogisticsDashboard() {
                         {renderBadge(o.status)}
                         {renderEntregaEstimada(o)}
                       </td>
-                      <td>
-                        {o.assigned_to ? `${o.assigned_to.name} (${o.assigned_to.country})` : '—'}
-                      </td>
-                      <td className="d-flex justify-content-center" style={{ gap: 6 }}>
+                      <td>{o.assigned_to ? `${o.assigned_to.name} (${o.assigned_to.country})` : '—'}</td>
+                      <td className="d-flex justify-content-center gap-2">
                         {status === 'en_proceso' && (
-                          <button
-                            className="btn btn-sm text-white"
-                            style={{ backgroundColor: '#17a2b8' }}
-                            onClick={() => cambiarEstado(o, 'en_camino')}
-                          >
+                          <button className="btn btn-sm btn-info text-white" onClick={() => cambiarEstado(o, 'en_camino')}>
                             En camino
                           </button>
                         )}
                         {(status === 'en_proceso' || status === 'en_camino') && (
-                          <button
-                            className="btn btn-sm text-white"
-                            style={{ backgroundColor: '#198754' }}
-                            onClick={() => cambiarEstado(o, 'entregado')}
-                          >
+                          <button className="btn btn-sm btn-success" onClick={() => cambiarEstado(o, 'entregado')}>
                             Entregado
                           </button>
                         )}
@@ -304,14 +278,13 @@ export default function LogisticsDashboard() {
           </div>
         </div>
 
-
         <div className="card shadow-sm border-0 mt-4">
-          <div className="card-header text-white" style={{ backgroundColor: '#5A2E1B' }}>
+          <div className="card-header text-white bg-brand-1">
             Historial de pedidos aceptados ({filtroFecha})
           </div>
           <div className="card-body p-0">
-            <table className="table mb-0">
-              <thead className="text-white text-center" style={{ backgroundColor: '#8B4513' }}>
+            <table className="table table-hover table-soft table-sticky mb-0">
+              <thead className="text-white text-center bg-brand-2">
                 <tr>
                   <th>N° Pedido</th>
                   <th>Cliente</th>
@@ -321,13 +294,13 @@ export default function LogisticsDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {aceptadosFiltrados.length === 0 ? (
+                {aceptadosMiosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-center text-muted py-4">
                       No hay pedidos aceptados en el periodo seleccionado.
                     </td>
                   </tr>
-                ) : aceptadosFiltrados.map(o => (
+                ) : aceptadosMiosFiltrados.map(o => (
                   <tr key={o.id} className="text-center">
                     <td>{o.numero_pedido}</td>
                     <td>{o.usuario?.username ?? '—'}</td>

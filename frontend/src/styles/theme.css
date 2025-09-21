@@ -1,0 +1,72 @@
+
+:root{
+    --brand-1:#5A2E1B;   
+    --brand-2:#8B4513;   
+    --accent:#C47A47;
+    --paper:#fffdf9;    
+    --ink:#3e2d24;
+    --muted:#7a5a48;
+    --stroke:#eadfd6;
+    --shadow:0 6px 18px rgba(90,46,27,.08);
+  }
+  
+  html,body{
+    background:
+      radial-gradient(1200px 600px at -10% -20%, #f4ece6 0%, transparent 60%),
+      radial-gradient(900px 500px at 120% 10%, #f3e7de 0%, transparent 60%),
+      #f8f4f0;
+    color:var(--ink);
+  }
+  
+  .card{
+    background:var(--paper);
+    border:1px solid var(--stroke) !important;
+    border-radius:14px !important;
+    box-shadow:var(--shadow);
+  }
+  .card-header{
+    border-bottom:1px solid rgba(255,255,255,.15);
+    font-weight:700;
+  }
+  .bg-brand-1{ background:linear-gradient(90deg, var(--brand-1), #6a3a22); }
+  .bg-brand-2{ background:linear-gradient(90deg, var(--brand-2), #9a542c); }
+  
+  .toolbar{
+    background:#f6eee6;
+    border:1px solid var(--stroke);
+    border-radius:12px;
+    padding:10px 12px;
+  }
+  
+  .kpi-grid{ display:grid; grid-template-columns:repeat(4,minmax(140px,1fr)); gap:12px; }
+  .kpi{
+    background:linear-gradient(180deg,#fff,#faf3ec);
+    border:1px solid var(--stroke);
+    border-radius:12px;
+    padding:18px 12px;
+    text-align:center;
+  }
+  .kpi .label{ color:var(--muted); font-weight:600; }
+  .kpi .value{ font-size:28px; font-weight:800; line-height:1; }
+  
+  .table thead th{
+    position:sticky; top:0; z-index:1;
+  }
+  .table-sticky thead{ background:var(--brand-1); color:#fff; }
+  .table-soft tbody tr:nth-child(odd){ background:#fbf7f2; }
+  .table-soft tbody tr:hover{ background:#fff3e6; }
+  
+
+  .badge{
+    border-radius:999px;
+    padding:.42rem .66rem;
+    font-weight:600;
+  }
+  
+  .btn-brand{ background:var(--brand-2); color:#fff; border:none; }
+  .btn-brand:hover{ filter:brightness(.95); }
+  .btn-success{ box-shadow:0 2px 6px rgba(25,135,84,.25); }
+  .btn-info{ box-shadow:0 2px 6px rgba(23,162,184,.25); }
+  
+  .section + .section{ margin-top:1rem; }
+  
