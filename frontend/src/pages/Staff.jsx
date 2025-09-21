@@ -79,7 +79,10 @@ export default function Staff() {
     <Base title="Gestión de Usuarios">
       <TopNav
         productosSinStock={sinStock}
-        trabajadoresCount={displayedStaff.length}
+        trabajadoresCount={staff.filter(
+          u => String(u.role || '').toLowerCase() !== 'admin' &&
+               String(u.username || '').toLowerCase() !== 'admin'
+        ).length}
         productCount={productCount}
         pedidosCount={pedidosCount}
       />

@@ -83,8 +83,12 @@ export default function Orders() {
       .then(([staffRes, pedRes, prodRes]) => {
         if (!alive) return
         const allStaff = Array.isArray(staffRes.data) ? staffRes.data : []
-        setTrabajadoresCount(allStaff.length)
-
+        setTrabajadoresCount(
+          allStaff.filter(
+            u => String(u.role || '').toLowerCase() !== 'admin' &&
+                 String(u.username || '').toLowerCase() !== 'admin'
+          ).length
+        )
         const onlyClients = allStaff
           .filter(u => String(u.role || '').toLowerCase() === 'cliente')
           .filter(u => !(u.is_superuser === true) && String(u.username || '').toLowerCase() !== 'admin')

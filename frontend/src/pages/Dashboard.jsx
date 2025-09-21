@@ -26,12 +26,16 @@ export default function Dashboard() {
       api.get('/api/pedidos/'),
     ])
       .then(([staffRes, prodRes, pedRes]) => {
-        const staff = staffRes.data || []
+        const staff = Array.isArray(staffRes.data) ? staffRes.data : []
+        const nonAdminCount = staff.filter(
+          u => String(u.role || '').toLowerCase() !== 'admin' &&
+               String(u.username || '').toLowerCase() !== 'admin'
+        ).length  
         const productos = prodRes.data || []
         const pedidos = pedRes.data || []
 
         setStats({
-          trabajadoresCount: staff.length,
+          trabajadoresCount: nonAdminCount,
           productCount: productos.length,
           pedidosCount: pedidos.length,
         })

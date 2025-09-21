@@ -47,7 +47,15 @@ export default function Products() {
           : []
         setCategorias(cats)
 
-        setUsuariosCount(Array.isArray(usersRes.data) ? usersRes.data.length : 0)
+        setUsuariosCount(
+          Array.isArray(usersRes.data)
+            ? usersRes.data.filter(
+              u => String(u.role || '').toLowerCase() !== 'admin' &&
+                   String(u.username || '').toLowerCase() !== 'admin'
+            ).length
+            : 0
+          )
+                  
         setPedidosCount(Array.isArray(pedRes.data) ? pedRes.data.length : 0)
 
         const prods = Array.isArray(prodRes.data) ? sortByName(prodRes.data) : []
