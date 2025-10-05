@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'django_extensions',
     'dashboard.apps.DashboardConfig',
     'user.apps.UserConfig',
 
@@ -158,10 +158,14 @@ CORS_ALLOWED_ORIGINS = [
     "https://brewmanager-viu.vercel.app",
 ]        
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
     "http://localhost:3000",
+    "https://*.vercel.app",
     "http://127.0.0.1:3000",
     "https://brewmanager-viu.vercel.app",
 ]

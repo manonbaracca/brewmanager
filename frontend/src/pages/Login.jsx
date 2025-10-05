@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Base from '@/components/Base'
-import api from '@/lib/api' 
+import api, { initCsrf } from '@/lib/api'
 
 export default function Login() {
   const [step, setStep] = useState(1)
@@ -25,6 +25,7 @@ export default function Login() {
     setAlerts([])
     setLoading(true)
     try {
+      await initCsrf(); 
       const payload = new URLSearchParams({
         username: credentials.username,
         password: credentials.password,
@@ -58,6 +59,7 @@ export default function Login() {
     setAlerts([])
     setLoading(true)
     try {
+      await initCsrf();
       const payload = new URLSearchParams({ otp_id: otpId, code: otpCode })
 
       const { data, status } = await api.post('/api/login/verify/', payload, {
