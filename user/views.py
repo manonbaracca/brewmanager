@@ -48,45 +48,54 @@ def register_api(request):
 
     return JsonResponse(form.errors, status=400)
 
-
 @ensure_csrf_cookie
 def login_api(request):
     if request.method != 'POST':
         return JsonResponse({'detail': 'Método no permitido'}, status=405)
+
+    form = AuthenticationForm(request, data=request.POST)
+    if not form.is_valid():
+        return JsonResponse({'errors': form.errors}, status=400)
+
+    user = form.get_user()
+    otp = OTPCode.create_for_user(user, minutes_valid=10)
+
+    to_email = user.email or None
+    if to_email:
+        subject = "Tu código de verificación (OTP) - BrewManager"
+        message = (
+            f"Hola {user.username},\n\n"
+            f"Tu código de verificación es: {otp.code}\n"
+            f"Vence en 10 minutos.\n\n"
+            f"Si no intentaste iniciar sesión, ignorá este correo."
+        )
+        try:
+            Thread(
+                target=_send_otp_async,
+                args=(subject, message, to_email),
+                daemon=True,
+            ).start()
+        except Exception:
+            logger.exception("No se pudo encolar el envío de OTP")
+
+    masked = None
+    if to_email:
+        name, _, domain = to_email.partition("@")
+        masked = (name[:2] + "****@" + domain) if domain else None
+
+    return JsonResponse({
+        'otp_required': True,
+        'otp_id': otp.id,
+        'expires_at': otp.expires_at.isoformat(),
+        'masked_email': masked,
+    }, status=202)
+
+def _send_otp_async(subject, message, to_email):
     try:
-        form = AuthenticationForm(request, data=request.POST)
-        if not form.is_valid():
-            return JsonResponse({'errors': form.errors}, status=400)
-
-        user = form.get_user()
-        otp = OTPCode.create_for_user(user, minutes_valid=10)
-
-        to_email = user.email or None
-        if to_email:
-            subject = "Tu código de verificación (OTP) - BrewManager"
-            message = (
-                f"Hola {user.username},\n\n"
-                f"Tu código de verificación es: {otp.code}\n"
-                f"Vence en 10 minutos.\n\n"
-                f"Si no intentaste iniciar sesión, ignorá este correo."
-            )
-            Thread(target=_send_otp_async, args=(subject, message, to_email), daemon=True).start()
-
-        masked = None
-        if to_email:
-            name, _, domain = to_email.partition("@")
-            masked = (name[:2] + "****@" + domain) if domain else None
-
-        return JsonResponse({
-            'otp_required': True,
-            'otp_id': otp.id,
-            'expires_at': otp.expires_at.isoformat(),
-            'masked_email': masked,
-        }, status=202)
+        conn = get_connection(timeout=getattr(settings, 'EMAIL_TIMEOUT', 15))
+        EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], connection=conn).send()
     except Exception:
-        logger.exception("login_api failed")
-        return JsonResponse({'detail': 'Internal error'}, status=500)
-
+        logger.exception("Error enviando OTP por email")
 
 @ensure_csrf_cookie
 def verify_otp_api(request):
@@ -219,13 +228,6 @@ def health_db(request):
         logger.exception("health_db failed")
         return JsonResponse({"db": "error", "error": str(e)}, status=500)
 
-
-def _send_otp_async(subject, message, to_email):
-    try:
-        conn = get_connection(timeout=getattr(settings, 'EMAIL_TIMEOUT', 10))
-        EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], connection=conn).send()
-    except Exception:
-        logger.exception("Error enviando OTP por email")
 
 def health_smtp(request):
     host = "smtp.gmail.com"
