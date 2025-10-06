@@ -16,4 +16,6 @@ urlpatterns = [
     path('user/',                     av.current_user,               name='api-current-user'),
     path('password-reset/request/',   av.password_reset_request_api, name='api-password-reset-request'),
     path('password-reset/confirm/',   av.password_reset_confirm_api, name='api-password-reset-confirm'),
+    path('health/smtp/', v.health_smtp, name='api-health-smtp'),
+
 ]

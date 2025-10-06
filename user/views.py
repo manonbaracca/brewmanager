@@ -22,6 +22,8 @@ from dashboard.utils import log_action
 import logging
 from threading import Thread
 from django.core.mail import EmailMessage, get_connection
+import socket, json
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
@@ -224,3 +226,13 @@ def _send_otp_async(subject, message, to_email):
         EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], connection=conn).send()
     except Exception:
         logger.exception("Error enviando OTP por email")
+
+def health_smtp(request):
+    host = "smtp.gmail.com"
+    port = 587
+    try:
+        sock = socket.create_connection((host, port), timeout=5)
+        sock.close()
+        return JsonResponse({"smtp_connect": "ok", "host": host, "port": port})
+    except Exception as e:
+        return JsonResponse({"smtp_connect": "error", "host": host, "port": port, "error": str(e)}, status=503)
