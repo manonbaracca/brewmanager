@@ -1,11 +1,10 @@
 from django.http import JsonResponse
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.conf import settings
 from django.middleware.csrf import get_token
 
@@ -19,18 +18,19 @@ from .models import Profile, OTPCode
 from .forms import CrearUserForm, UserUpdateForm, ProfileUpdateForm
 from .serializers import StaffSerializer
 from dashboard.utils import log_action
-import logging
-logger = logging.getLogger(__name__)
-from django.contrib.auth import get_user_model
 
+import logging
+from threading import Thread
+from django.core.mail import EmailMessage, get_connection
+
+logger = logging.getLogger(__name__)
 
 
 @ensure_csrf_cookie
 def csrf_api(request):
-    return JsonResponse({
-        "detail": "CSRF cookie set",
-        "csrfToken": get_token(request),
-    })
+    return JsonResponse({"detail": "CSRF cookie set", "csrfToken": get_token(request)})
+
+
 @ensure_csrf_cookie
 def register_api(request):
     if request.method != 'POST':
@@ -39,15 +39,13 @@ def register_api(request):
     form = CrearUserForm(request.POST)
     if form.is_valid():
         user = form.save()
-        log_action(
-            request.user if request.user.is_authenticated else None,
-            'user_add',
-            f'Usuario creado: {user.username}'
-        )
+        log_action(request.user if request.user.is_authenticated else None,
+                   'user_add', f'Usuario creado: {user.username}')
         token, _ = Token.objects.get_or_create(user=user)
         return JsonResponse({'username': user.username, 'token': token.key}, status=201)
 
     return JsonResponse(form.errors, status=400)
+
 
 @ensure_csrf_cookie
 def login_api(request):
@@ -63,16 +61,14 @@ def login_api(request):
 
         to_email = user.email or None
         if to_email:
-            try:
-                send_mail(
-                    "Tu código de verificación (OTP) - BrewManager",
-                    f"Hola {user.username},\n\nTu código de verificación es: {otp.code}\nVence en 10 minutos.\n",
-                    settings.DEFAULT_FROM_EMAIL,
-                    [to_email],
-                    fail_silently=True
-                )
-            except Exception:
-                pass
+            subject = "Tu código de verificación (OTP) - BrewManager"
+            message = (
+                f"Hola {user.username},\n\n"
+                f"Tu código de verificación es: {otp.code}\n"
+                f"Vence en 10 minutos.\n\n"
+                f"Si no intentaste iniciar sesión, ignorá este correo."
+            )
+            Thread(target=_send_otp_async, args=(subject, message, to_email), daemon=True).start()
 
         masked = None
         if to_email:
@@ -86,7 +82,7 @@ def login_api(request):
             'masked_email': masked,
         }, status=202)
     except Exception:
-        logging.exception("login_api failed")
+        logger.exception("login_api failed")
         return JsonResponse({'detail': 'Internal error'}, status=500)
 
 
@@ -126,6 +122,7 @@ def verify_otp_api(request):
         'role': getattr(profile, 'role', None),
     })
 
+
 @login_required
 def logout_api(request):
     if request.method != 'POST':
@@ -136,17 +133,18 @@ def logout_api(request):
     logout(request)
     return JsonResponse({'detail': 'Desconectado'})
 
+
 @login_required
 def profile_api(request):
     p = request.user.profile
     return JsonResponse({
-        'id':            request.user.id,
-        'username':      request.user.username,
-        'email':         request.user.email,
-        'telefono':      str(p.telefono) if p.telefono else '',
-        'direccion':     p.direccion or '',
-        'is_superuser':  request.user.is_superuser,
-        'role':          p.role,
+        'id': request.user.id,
+        'username': request.user.username,
+        'email': request.user.email,
+        'telefono': str(p.telefono) if p.telefono else '',
+        'direccion': p.direccion or '',
+        'is_superuser': request.user.is_superuser,
+        'role': p.role,
     })
 
 
@@ -156,7 +154,7 @@ def profile_update_api(request):
     if request.method != 'POST':
         return JsonResponse({'detail': 'Método no permitido'}, status=405)
 
-    user_form    = UserUpdateForm(request.POST, instance=request.user)
+    user_form = UserUpdateForm(request.POST, instance=request.user)
     profile_form = ProfileUpdateForm(request.POST, instance=request.user.profile)
 
     if user_form.is_valid() and profile_form.is_valid():
@@ -165,10 +163,10 @@ def profile_update_api(request):
         log_action(request.user, 'user_edit', 'Perfil actualizado')
         p = request.user.profile
         return JsonResponse({
-            'username':     request.user.username,
-            'email':        request.user.email,
-            'telefono':     str(p.telefono) if p.telefono else '',
-            'direccion':    p.direccion or '',
+            'username': request.user.username,
+            'email': request.user.email,
+            'telefono': str(p.telefono) if p.telefono else '',
+            'direccion': p.direccion or '',
             'is_superuser': request.user.is_superuser,
         })
 
@@ -190,7 +188,6 @@ def staff_list_api(request):
 @permission_classes([IsAdminUser])
 def staff_detail_api(request, pk):
     trabajador = get_object_or_404(User, pk=pk, is_superuser=False)
-
     profile, _ = Profile.objects.get_or_create(user=trabajador, defaults={'role': 'cliente'})
 
     if request.method == 'GET':
@@ -217,5 +214,13 @@ def health_db(request):
         n = get_user_model().objects.count()
         return JsonResponse({"db": "ok", "users": n})
     except Exception as e:
-        logging.exception("health_db failed")
+        logger.exception("health_db failed")
         return JsonResponse({"db": "error", "error": str(e)}, status=500)
+
+
+def _send_otp_async(subject, message, to_email):
+    try:
+        conn = get_connection(timeout=getattr(settings, 'EMAIL_TIMEOUT', 10))
+        EmailMessage(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], connection=conn).send()
+    except Exception:
+        logger.exception("Error enviando OTP por email")
