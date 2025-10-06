@@ -229,12 +229,27 @@ def health_db(request):
         return JsonResponse({"db": "error", "error": str(e)}, status=500)
 
 
+
 def health_smtp(request):
-    host = "smtp.gmail.com"
-    port = 587
-    try:
-        sock = socket.create_connection((host, port), timeout=5)
-        sock.close()
-        return JsonResponse({"smtp_connect": "ok", "host": host, "port": port})
-    except Exception as e:
-        return JsonResponse({"smtp_connect": "error", "host": host, "port": port, "error": str(e)}, status=503)
+    host = getattr(settings, "EMAIL_HOST", "")
+    port = int(getattr(settings, "EMAIL_PORT", 0) or 0)
+
+    intentos = []
+
+    def _try(h, p):
+        try:
+            s = socket.create_connection((h, p), timeout=5)
+            s.close()
+            return {"smtp_connect": "ok", "host": h, "port": p}
+        except Exception as e:
+            intentos.append({"host": h, "port": p, "error": str(e)})
+            return None
+
+    resp = _try(host, port)
+
+    if not resp and host == "smtp.sendgrid.net" and port in (0, 465, 587):
+        resp = _try(host, 2525)
+
+    if resp:
+        return JsonResponse(resp, status=200)
+    return JsonResponse({"smtp_connect": "error", "tried": intentos}, status=503)
