@@ -4,10 +4,12 @@ import environ
 import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-RUNNING_ON_RENDER = bool(os.environ.get("RENDER")) 
+
+RUNNING_ON_RENDER = "RENDER" in os.environ
 
 env = environ.Env(DEBUG=(bool, True))
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+if not RUNNING_ON_RENDER and os.path.exists(BASE_DIR / ".env"):
+    environ.Env.read_env(BASE_DIR / ".env")
 
 SECRET_KEY = env('SECRET_KEY', default='dev-only-key-no-usar-en-produccion')
 DEBUG = env.bool('DEBUG', default=True)
@@ -175,14 +177,14 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SAMESITE = "None"
 
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_BACKEND      = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST         = env('EMAIL_HOST',    default='smtp.sendgrid.net')
+EMAIL_PORT         = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS      = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER    = env('EMAIL_HOST_USER')       
+EMAIL_HOST_PASSWORD= env('EMAIL_HOST_PASSWORD')  
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
-EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=10)
+EMAIL_TIMEOUT      = env.int('EMAIL_TIMEOUT', default=15)
 
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
