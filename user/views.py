@@ -21,6 +21,8 @@ from .serializers import StaffSerializer
 from dashboard.utils import log_action
 import logging
 logger = logging.getLogger(__name__)
+from django.contrib.auth import get_user_model
+
 
 
 @ensure_csrf_cookie
@@ -51,14 +53,12 @@ def register_api(request):
 def login_api(request):
     if request.method != 'POST':
         return JsonResponse({'detail': 'Método no permitido'}, status=405)
-
     try:
         form = AuthenticationForm(request, data=request.POST)
         if not form.is_valid():
             return JsonResponse({'errors': form.errors}, status=400)
 
         user = form.get_user()
-
         otp = OTPCode.create_for_user(user, minutes_valid=10)
 
         to_email = user.email or None
@@ -66,13 +66,13 @@ def login_api(request):
             try:
                 send_mail(
                     "Tu código de verificación (OTP) - BrewManager",
-                    f"Hola {user.username},\n\nTu código de verificación es: {otp.code}\nVence en 10 minutos.",
+                    f"Hola {user.username},\n\nTu código de verificación es: {otp.code}\nVence en 10 minutos.\n",
                     settings.DEFAULT_FROM_EMAIL,
                     [to_email],
-                    fail_silently=True,
+                    fail_silently=True
                 )
             except Exception:
-                logger.exception("Fallo enviando OTP por email")
+                pass
 
         masked = None
         if to_email:
@@ -85,10 +85,10 @@ def login_api(request):
             'expires_at': otp.expires_at.isoformat(),
             'masked_email': masked,
         }, status=202)
+    except Exception:
+        logging.exception("login_api failed")
+        return JsonResponse({'detail': 'Internal error'}, status=500)
 
-    except Exception as e:
-        logger.exception("Excepción en login_api")
-        return JsonResponse({'detail': 'internal_error', 'error': str(e)}, status=500)
 
 @ensure_csrf_cookie
 def verify_otp_api(request):
@@ -210,3 +210,12 @@ def staff_detail_api(request, pk):
     log_action(request.user, 'user_del', f'Eliminó usuario {trabajador.username}')
     trabajador.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def health_db(request):
+    try:
+        n = get_user_model().objects.count()
+        return JsonResponse({"db": "ok", "users": n})
+    except Exception as e:
+        logging.exception("health_db failed")
+        return JsonResponse({"db": "error", "error": str(e)}, status=500)

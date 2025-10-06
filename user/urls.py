@@ -3,6 +3,7 @@ from . import views as v
 from . import api_views as av  
 
 urlpatterns = [
+    path('health/db/', v.health_db, name='api-health-db'),
     path('csrf/',             v.csrf_api,               name='api-csrf'),
     path('register/',         v.register_api,           name='api-register'),
     path('login/',            v.login_api,              name='api-login'),
