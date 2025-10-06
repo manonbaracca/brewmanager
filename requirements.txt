@@ -8,3 +8,4 @@ pymysql>=1.1
 django-phonenumber-field[phonenumberslite]
 django-crispy-forms
 crispy-bootstrap5
+django-extensions==4.1
