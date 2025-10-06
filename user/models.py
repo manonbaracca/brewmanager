@@ -1,14 +1,16 @@
-from django.db import models
-from django.contrib.auth.models import User
-from phonenumber_field.modelfields import PhoneNumberField
-from django.utils import timezone
 from datetime import timedelta
+
+from django.contrib.auth.models import User
+from django.db import models
+from django.utils import timezone
+from phonenumber_field.modelfields import PhoneNumberField
+
 
 class Profile(models.Model):
     ROLE_CHOICES = [
-        ('cliente',   'Cliente'),
+        ('cliente', 'Cliente'),
         ('logistica', 'Logística'),
-        ('admin',     'Administrador'),
+        ('admin', 'Administrador'),
     ]
 
     user = models.OneToOneField(
@@ -17,12 +19,8 @@ class Profile(models.Model):
         related_name='profile',
     )
     direccion = models.CharField(max_length=100, null=True, blank=True)
-    telefono  = PhoneNumberField(blank=True, null=True)
-    role      = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='cliente',
-    )
+    telefono = PhoneNumberField(blank=True, null=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
 
     def __str__(self):
         return f'{self.user.username} ({self.get_role_display()})'
@@ -38,9 +36,10 @@ class OTPCode(models.Model):
 
     @classmethod
     def create_for_user(cls, user, minutes_valid=10):
+        import secrets
+
+        code = f"{secrets.randbelow(1_000_000):06d}"
         expires = timezone.now() + timedelta(minutes=minutes_valid)
-        import random
-        code = f"{random.randint(0, 999999):06d}"
         return cls.objects.create(user=user, code=code, expires_at=expires)
 
     def is_valid(self):

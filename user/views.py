@@ -19,6 +19,8 @@ from .models import Profile, OTPCode
 from .forms import CrearUserForm, UserUpdateForm, ProfileUpdateForm
 from .serializers import StaffSerializer
 from dashboard.utils import log_action
+import logging
+logger = logging.getLogger(__name__)
 
 
 @ensure_csrf_cookie
@@ -50,40 +52,43 @@ def login_api(request):
     if request.method != 'POST':
         return JsonResponse({'detail': 'Método no permitido'}, status=405)
 
-    form = AuthenticationForm(request, data=request.POST)
-    if not form.is_valid():
-        return JsonResponse({'errors': form.errors}, status=400)
+    try:
+        form = AuthenticationForm(request, data=request.POST)
+        if not form.is_valid():
+            return JsonResponse({'errors': form.errors}, status=400)
 
-    user = form.get_user()
+        user = form.get_user()
 
-    otp = OTPCode.create_for_user(user, minutes_valid=10)
+        otp = OTPCode.create_for_user(user, minutes_valid=10)
 
-    to_email = user.email or None
-    subject = "Tu código de verificación (OTP) - BrewManager"
-    message = (
-        f"Hola {user.username},\n\n"
-        f"Tu código de verificación es: {otp.code}\n"
-        f"Vence a en 10 minutos.\n\n"
-        f"Si no intentaste iniciar sesión, ignora este correo."
-    )
-    if to_email:
-        try:
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=True)
-        except Exception:
-            pass
+        to_email = user.email or None
+        if to_email:
+            try:
+                send_mail(
+                    "Tu código de verificación (OTP) - BrewManager",
+                    f"Hola {user.username},\n\nTu código de verificación es: {otp.code}\nVence en 10 minutos.",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [to_email],
+                    fail_silently=True,
+                )
+            except Exception:
+                logger.exception("Fallo enviando OTP por email")
 
-    masked = None
-    if to_email:
-        name, _, domain = to_email.partition("@")
-        masked = (name[:2] + "****@" + domain) if domain else None
+        masked = None
+        if to_email:
+            name, _, domain = to_email.partition("@")
+            masked = (name[:2] + "****@" + domain) if domain else None
 
-    return JsonResponse({
-        'otp_required': True,
-        'otp_id': otp.id,
-        'expires_at': otp.expires_at.isoformat(),
-        'masked_email': masked,
-    }, status=202)
+        return JsonResponse({
+            'otp_required': True,
+            'otp_id': otp.id,
+            'expires_at': otp.expires_at.isoformat(),
+            'masked_email': masked,
+        }, status=202)
 
+    except Exception as e:
+        logger.exception("Excepción en login_api")
+        return JsonResponse({'detail': 'internal_error', 'error': str(e)}, status=500)
 
 @ensure_csrf_cookie
 def verify_otp_api(request):
