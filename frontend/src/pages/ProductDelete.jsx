@@ -10,25 +10,44 @@ export default function ProductDelete() {
   const [item, setItem] = useState(null)
   const [sinStock, setSinStock] = useState([])
   const [alert, setAlert] = useState(null)
-
+  const [trabajadoresCount, setTrabajadoresCount] = useState(0)
+  const [productCount, setProductCount] = useState(0)
+  const [pedidosCount, setPedidosCount] = useState(0)
+  
   useEffect(() => {
     let alive = true
     ;(async () => {
       try {
-        const [pRes, sRes] = await Promise.all([
+        const [pRes, prodRes, staffRes, pedRes] = await Promise.all([
           api.get(`/api/productos/${id}/`),
-          api.get('/api/productos/?cantidad=0')
+          api.get('/api/productos/'),
+          api.get('/api/staff/'),
+          api.get('/api/pedidos/')
         ])
         if (!alive) return
         setItem(pRes.data)
-        setSinStock(sRes.data)
+  
+        const allProducts = Array.isArray(prodRes.data) ? prodRes.data : []
+        setSinStock(allProducts.filter(p => p.cantidad === 0))
+  
+        const allStaff = Array.isArray(staffRes.data) ? staffRes.data : []
+        setTrabajadoresCount(
+          allStaff.filter(
+            u => String(u.role || '').toLowerCase() !== 'admin' &&
+                 String(u.username || '').toLowerCase() !== 'admin'
+          ).length
+        )
+  
+        const allPedidos = Array.isArray(pedRes.data) ? pedRes.data : []
+        setProductCount(allProducts.length)
+        setPedidosCount(allPedidos.length)
       } catch {
         if (alive) setAlert({ type:'danger', msg:'Error al cargar.' })
       }
     })()
     return () => { alive = false }
   }, [id])
-
+  
   const handleDelete = async () => {
     try {
       await initCsrf()

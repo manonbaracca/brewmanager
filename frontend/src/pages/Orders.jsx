@@ -35,6 +35,10 @@ function normalizeStatus(s) {
   const norm = map[key] || key
   return STATUS_LABELS[norm] ? norm : 'pendiente'
 }
+function canDeleteByStatus(status) {
+  const k = normalizeStatus(status)
+  return k === 'pendiente' 
+}
 function StatusBadge({ value }) {
   const k = normalizeStatus(value)
   return <span className="badge" style={{ backgroundColor: STATUS_BG[k] }}>{STATUS_LABELS[k]}</span>
@@ -171,8 +175,39 @@ export default function Orders() {
                   <td>{p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES') : '—'}</td>
                   <td><StatusBadge value={p.status} /></td>
                   <td>
-                    <Link to={`/pedidos/${p.id}`} className="btn btn-sm me-2" style={{ backgroundColor: '#A0522D', color: '#FFF' }}>Ver</Link>
-                    <Link to={`/pedidos/delete/${p.id}`} className="btn btn-sm" style={{ backgroundColor: '#8B0000', color: '#FFF' }}>Eliminar</Link>
+                    <Link
+                      to={`/pedidos/${p.id}`}
+                      className="btn btn-sm me-2"
+                      style={{ backgroundColor: '#A0522D', color: '#FFF' }}
+                    >
+                      Ver
+                    </Link>
+
+                    {canDeleteByStatus(p.status) ? (
+                      <Link
+                        to={`/pedidos/delete/${p.id}`}
+                        className="btn btn-sm"
+                        style={{ backgroundColor: '#8B0000', color: '#FFF' }}
+                      >
+                        Eliminar
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: '#8B0000',
+                          color: '#FFF',
+                          opacity: 0.5,
+                          cursor: 'not-allowed',
+                          pointerEvents: 'none',
+                        }}
+                        title="Solo se puede cancelar un pedido pendiente"
+                        disabled
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
