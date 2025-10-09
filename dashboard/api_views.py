@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.utils import timezone
+from .utils import log_action
 
 from rest_framework import viewsets, permissions, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
@@ -106,12 +107,25 @@ class PedidoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.validated_data.pop('status', None)
-        serializer.save(usuario=self.request.user, status='pendiente')
+        pedido = serializer.save(usuario=self.request.user, status='pendiente')
+        try:
+            items = pedido.detalles.count()
+        except Exception:
+            items = 0
+        log_action(
+            self.request.user,
+            'order_add',
+            f'Creó pedido {pedido.numero_pedido} (items: {items})'
+        )
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        data = request.data.copy()
+        
+        old_status      = instance.status
+        old_assigned_id = instance.assigned_to_id
+        old_eta         = instance.entrega_estimada
 
+        data = request.data.copy() 
         target_status = data.get('status')
 
         if target_status in ('en_proceso', 'en_camino'):
@@ -130,15 +144,43 @@ class PedidoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        pedido = serializer.instance
+        
+        changed_bits = []
+        if old_status != pedido.status:
+            changed_bits.append(f"estado: {old_status} → {pedido.status}")
+        if old_assigned_id != pedido.assigned_to_id:
+            changed_bits.append(
+                f"repartidor: {old_assigned_id or '-'} → {pedido.assigned_to_id or '-'}"
+            )
+        if old_eta != pedido.entrega_estimada:
+            changed_bits.append(
+                f"ETA: {old_eta or '-'} → {pedido.entrega_estimada or '-'}"
+            )
+
+        if changed_bits:
+            log_action(
+                request.user,
+                'order_edit',
+                f"Editó {pedido.numero_pedido} ({'; '.join(changed_bits)})"
+            )
+
+        if old_status == 'pendiente' and pedido.status in ('en_proceso', 'en_camino'):
+            log_action(
+                request.user,
+                'order_edit', 
+                (f"Aceptó {pedido.numero_pedido}; nuevo estado {pedido.status}; "
+                 f"repartidor {pedido.assigned_to or '-'}; "
+                 f"ETA {pedido.entrega_estimada or '-'}")
+            )
+
+
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        from rest_framework.response import Response 
-        from rest_framework import status
-
         pedido = self.get_object()
         role = get_role(request.user)
 
@@ -156,7 +198,19 @@ class PedidoViewSet(viewsets.ModelViewSet):
             producto.cantidad += detalle.cantidad
             producto.save()
 
-        return super().destroy(request, *args, **kwargs)
+        numero = pedido.numero_pedido
+        usuario = pedido.usuario.username
+
+        resp = super().destroy(request, *args, **kwargs)
+
+        if resp.status_code == status.HTTP_204_NO_CONTENT:
+            log_action(
+                request.user,
+                'order_del',
+                f'Eliminó pedido {numero} del usuario {usuario}'
+            )
+
+        return resp
 
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):

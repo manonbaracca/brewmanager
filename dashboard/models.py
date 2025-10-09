@@ -45,7 +45,7 @@ class Pedido(models.Model):
         related_name='assigned_orders',
     )
     entrega_estimada = models.DateField(null=True, blank=True) 
-    
+
     def save(self, *args, **kwargs):
         if not self.numero_pedido:
             self.numero_pedido = f"ORD-{str(uuid.uuid4())[:8]}"
@@ -78,6 +78,7 @@ class AuditLog(models.Model):
         ('order_add', 'Pedido creado'),
         ('order_edit','Pedido editado'),
         ('order_del', 'Pedido eliminado'),
+        ('order_accept', 'Pedido aceptado'),
     ]
 
     user       = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)

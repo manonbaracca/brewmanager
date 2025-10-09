@@ -55,7 +55,7 @@ function App() {
         <Route path="/producto/delete/:id" element={<ProductDelete />} />
         <Route path="/ver-logs" element={<Logs />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
+        <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
       
       </Routes>

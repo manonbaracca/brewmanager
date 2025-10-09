@@ -10,6 +10,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.conf import settings
+from dashboard.utils import log_action
 
 from .forms import CrearUserForm
 
@@ -69,12 +70,17 @@ def password_reset_request_api(request):
         message = (
             f"Hola {user.username},\n\n"
             f"Para restablecer tu contraseña, hacé click en este enlace:\n{link}\n\n"
-            f"Si no solicitaste esto, ignorá este correo."
+            f"Si no solicitaste restablecer tu contraseña, porfavor ignorá este correo."
         )
         try:
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
         except Exception:
             pass
+
+        try:
+            log_action(user, 'user_edit', 'Solicitó restablecer su contraseña')
+        except Exception:
+            pass        
 
     return Response({'detail': 'Si el email/usuario existe, enviamos un link de reseteo.'}, status=200)
 
@@ -104,4 +110,9 @@ def password_reset_confirm_api(request):
 
     user.set_password(p1)
     user.save()
+    try:
+        log_action(user, 'user_edit', 'Restableció su contraseña')
+    except Exception:
+        pass
+
     return Response({'detail': 'Contraseña actualizada correctamente'}, status=200)
