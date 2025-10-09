@@ -24,16 +24,21 @@ export default function Dashboard() {
   const alpha = '80'
   const generateColors = n => Array.from({ length: n }, (_, i) => themeColors[i % themeColors.length] + alpha)
 
-  const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime() }
-  const endOfDay   = (d) => { const x = new Date(d); x.setHours(23,59,59,999); return x.getTime() }
-
+  const toLocalYMD = (dateLike) => {
+    const d = new Date(dateLike)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}` 
+  }
+  
   const inRange = (iso) => {
-    const t = new Date(iso).getTime()
-    if (Number.isNaN(t)) return false
-    if (fromDate && t < startOfDay(fromDate)) return false
-    if (toDate && t > endOfDay(toDate)) return false
+    const day = toLocalYMD(iso)
+    if (fromDate && day < fromDate) return false
+    if (toDate && day > toDate) return false
     return true
   }
+  
 
   useEffect(() => {
     Promise.all([api.get('/api/staff/'), api.get('/api/productos/'), api.get('/api/pedidos/')])
@@ -91,7 +96,7 @@ export default function Dashboard() {
 
     const countByDay = {}
     pedidosFiltrados.forEach(p => {
-      const key = (new Date(p.fecha)).toISOString().slice(0, 10) 
+      const key = toLocalYMD(p.fecha)
       countByDay[key] = (countByDay[key] || 0) + 1
     })
     const barLabels = Object.keys(countByDay).sort()

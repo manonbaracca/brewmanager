@@ -44,7 +44,13 @@ export default function ProductUpdate() {
         setSinStock(allProducts.filter(p => p.cantidad === 0))
 
         const allStaff = Array.isArray(staffRes.data) ? staffRes.data : []
-        setTrabajadoresCount(allStaff.length)
+        setTrabajadoresCount(
+          allStaff.filter(
+            u => String(u.role || '').toLowerCase() !== 'admin' &&
+                 String(u.username || '').toLowerCase() !== 'admin'
+          ).length
+        )
+        
 
         const allPedidos = Array.isArray(pedRes.data) ? pedRes.data : []
         setPedidosCount(allPedidos.length)

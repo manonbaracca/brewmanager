@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Base from '@/components/Base'
-import api from '@/lib/api'
+import api, { initCsrf } from '@/lib/api'
 
 const STATUS_LABELS = {
   pendiente:  'Pendiente',
@@ -66,9 +66,21 @@ export default function LogisticsDashboard() {
 
   const patchOrder = async (id, patch) => {
     try {
-      const { data: updated } = await api.patch(`/api/pedidos/${id}/`, patch)
+      await initCsrf()
+      const doPatch = () => api.patch(`/api/pedidos/${id}/`, patch)
+      let { data: updated } = await doPatch()
       setOrders(cur => cur.map(o => (o.id === id ? { ...o, ...updated } : o)))
-    } catch {
+    } catch (err) {
+      const detail = err?.response?.data?.detail || ''
+      const isCsrf = err?.response?.status === 403 && /csrf/i.test(detail)
+      if (isCsrf) {
+        try {
+          await initCsrf()
+          const { data: updated } = await api.patch(`/api/pedidos/${id}/`, patch)
+          setOrders(cur => cur.map(o => (o.id === id ? { ...o, ...updated } : o)))
+          return
+        } catch {}
+      }
       setError('Error al actualizar pedido.')
     }
   }

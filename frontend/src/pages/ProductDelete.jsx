@@ -68,7 +68,13 @@ export default function ProductDelete() {
 
   return (
     <Base title="Borrar Producto">
-      <TopNav productosSinStock={sinStock} trabajadoresCount={0} productCount={0} pedidosCount={0} />
+      <TopNav
+        productosSinStock={sinStock}
+        trabajadoresCount={trabajadoresCount}
+        productCount={productCount}
+        pedidosCount={pedidosCount}
+      />
+
       <div className="container my-5">
         {alert && (
           <div className={`alert alert-${alert.type} alert-dismissible fade show`}>
