@@ -66,6 +66,78 @@ class ProductoViewSet(viewsets.ModelViewSet):
     serializer_class = ProductoSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        producto = serializer.save()
+        try:
+            log_action(
+                self.request.user,
+                'prod_add',
+                f'Creó producto "{producto.nombre}" (cat: {producto.categoria.nombre}, stock: {producto.cantidad})'
+            )
+        except Exception:
+            pass
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        old = {
+            'nombre': instance.nombre,
+            'cantidad': instance.cantidad,
+            'categoria': getattr(instance.categoria, 'nombre', '—'),
+            'categoria_id': getattr(instance.categoria, 'id', None),
+        }
+
+        response = super().update(request, *args, **kwargs)
+
+        try:
+            instance.refresh_from_db()
+            new = {
+                'nombre': instance.nombre,
+                'cantidad': instance.cantidad,
+                'categoria': getattr(instance.categoria, 'nombre', '—'),
+                'categoria_id': getattr(instance.categoria, 'id', None),
+            }
+
+            diffs = []
+            if old['nombre'] != new['nombre']:
+                diffs.append(f'nombre: "{old["nombre"]}" → "{new["nombre"]}"')
+            if old['cantidad'] != new['cantidad']:
+                diffs.append(f'stock: {old["cantidad"]} → {new["cantidad"]}')
+            if old['categoria_id'] != new['categoria_id']:
+                diffs.append(f'categoría: "{old["categoria"]}" → "{new["categoria"]}"')
+
+            if diffs:
+                log_action(
+                    request.user,
+                    'prod_edit',
+                    f'Editó producto "{new["nombre"]}" ({"; ".join(diffs)})'
+                )
+        except Exception:
+            pass
+
+        return response
+
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        nombre = instance.nombre
+        categoria = getattr(instance.categoria, 'nombre', '—')
+        cantidad = instance.cantidad
+
+        resp = super().destroy(request, *args, **kwargs)
+
+        if resp.status_code == status.HTTP_204_NO_CONTENT:
+            try:
+                log_action(
+                    request.user,
+                    'prod_del',
+                    f'Eliminó producto "{nombre}" (cat: {categoria}, stock: {cantidad})'
+                )
+            except Exception:
+                pass
+
+        return resp
+
 def _get_or_create_repartidor_for(user):
 
     name = user.username or user.email or "Logística"
