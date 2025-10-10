@@ -37,8 +37,9 @@ export default function Profile() {
   }
 
   const { username, email, telefono, direccion, is_superuser, role } = profile
-  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'
-
+  const effectiveRole = is_superuser ? 'admin' : (role || '')
+  const roleLabel = effectiveRole ? effectiveRole.charAt(0).toUpperCase() + effectiveRole.slice(1) : '—'
+  
   return (
     <Base title="Detalle del Usuario">
       <div className="container my-5">

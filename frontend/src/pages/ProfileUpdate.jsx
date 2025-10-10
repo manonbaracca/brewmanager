@@ -90,13 +90,13 @@ export default function ProfileUpdate() {
                   <div className="mb-3">
                     <label htmlFor="username" className="form-label">Usuario</label>
                     <input id="username" name="username" className="form-control"
-                      value={formData.username} onChange={handleChange} required />
+                      value={formData.username} readOnly disabled />
                   </div>
 
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label">Email</label>
                     <input id="email" name="email" type="email" className="form-control"
-                      value={formData.email} onChange={handleChange} required />
+                      value={formData.email} readOnly disabled />
                   </div>
 
                   <div className="mb-3">
