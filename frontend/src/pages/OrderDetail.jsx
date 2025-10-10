@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import Base from '@/components/Base'
 import api from '@/lib/api'
@@ -24,6 +24,9 @@ export default function OrderDetail() {
   const [user, setUser]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')
+  const [printing, setPrinting] = useState(false)
+
+  const printRef = useRef(null)
 
   useEffect(() => {
     let alive = true
@@ -37,6 +40,39 @@ export default function OrderDetail() {
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
   }, [id])
+
+  const handlePrint = async () => {
+    if (!printRef.current) return
+    try {
+      setPrinting(true)
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf')
+      ])
+
+      const node = printRef.current
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const imgData = canvas.toDataURL('image/png')
+
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pageWidth  = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+
+      const imgWidth = pageWidth
+      const imgHeight = canvas.height * (imgWidth / canvas.width)
+
+      const finalWidth = imgWidth
+      const finalHeight = imgHeight > pageHeight ? pageHeight : imgHeight
+
+      pdf.addImage(imgData, 'PNG', 0, 0, finalWidth, finalHeight)
+      const filename = `Pedido_${pedido?.numero_pedido || id}.pdf`
+      pdf.save(filename)
+    } catch (e) {
+      window.print()
+    } finally {
+      setPrinting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -70,11 +106,23 @@ export default function OrderDetail() {
   return (
     <Base title="Detalles del Pedido">
       <div className="container my-4">
-        <div className="card shadow-sm rounded-2">
+
+        <div className="d-flex justify-content-end gap-2 mb-3">
+          <button
+            className="btn btn-outline-secondary"
+            onClick={handlePrint}
+            disabled={printing}
+            title="Descargar/Imprimir PDF"
+          >
+            {printing ? 'Generando…' : 'Imprimir PDF'}
+          </button>
+        </div>
+
+        <div className="card shadow-sm rounded-2" ref={printRef}>
           <div className="card-header text-white" style={{ backgroundColor: '#8B4513' }}>
             Detalles del Pedido
           </div>
-          <div className="card-body">
+          <div className="card-body" style={{ backgroundColor: '#FFFFFF' }}>
             <p><strong>Número de Pedido:</strong> {pedido.numero_pedido}</p>
             <p><strong>Usuario:</strong> {pedido.usuario?.username ?? '—'}</p>
             <p><strong>Fecha:</strong> {pedido.fecha ? new Date(pedido.fecha).toLocaleDateString('es-ES') : '—'}</p>
@@ -100,14 +148,25 @@ export default function OrderDetail() {
               </tbody>
             </table>
 
-            <div className="text-center mt-4">
-              <Link to={backPath} className="btn text-white fw-semibold" style={{ backgroundColor: '#8B4513', padding: '0.5rem 1.5rem', borderRadius: '0.25rem' }}>
+            <div className="text-center mt-4 no-print">
+              <Link
+                to={backPath}
+                className="btn text-white fw-semibold"
+                style={{ backgroundColor: '#8B4513', padding: '0.5rem 1.5rem', borderRadius: '0.25rem' }}
+              >
                 Volver
               </Link>
             </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media print {
+          .no-print, .btn, .card-header { display: none !important; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      `}</style>
     </Base>
   )
 }

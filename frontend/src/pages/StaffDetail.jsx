@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Base from '@/components/Base'
-import api, { initCsrf } from '@/lib/api'  
+import api, { initCsrf } from '@/lib/api'
 
 export default function StaffDetail() {
   const { id } = useParams()
@@ -12,6 +12,10 @@ export default function StaffDetail() {
   const [error, setError]     = useState('')
   const [flash, setFlash]     = useState('')
   const [loading, setLoading] = useState(true)
+
+  // Rol original (derivado del usuario cargado)
+  const originalRole = useMemo(() => user?.role || '', [user])
+  const isDirty = role !== originalRole
 
   useEffect(() => {
     let alive = true
@@ -37,7 +41,7 @@ export default function StaffDetail() {
     setFlash('')
     setError('')
     try {
-      await initCsrf()                 
+      await initCsrf()
       await api.patch(`/api/staff/${id}/`, { role })
       setFlash('Rol actualizado correctamente.')
       setTimeout(
@@ -48,9 +52,7 @@ export default function StaffDetail() {
       const msg =
         e?.response?.data?.detail ||
         e?.response?.data?.error ||
-        e?.response?.status === 403
-          ? 'Permisos o CSRF inválido.'
-          : 'Error al actualizar el rol.'
+        (e?.response?.status === 403 ? 'Permisos o CSRF inválido.' : 'Error al actualizar el rol.')
       setError(msg)
       console.error('PATCH /api/staff/:id error:', e?.response?.data || e)
     }
@@ -59,9 +61,7 @@ export default function StaffDetail() {
   if (loading) {
     return (
       <Base title="Información del Usuario">
-        <div className="container my-5 text-center">
-          <p>Cargando detalles…</p>
-        </div>
+        <div className="container my-5 text-center"><p>Cargando detalles…</p></div>
       </Base>
     )
   }
@@ -95,7 +95,12 @@ export default function StaffDetail() {
               <div className="mb-4 row">
                 <label htmlFor="role" className="col-sm-3 col-form-label text-muted">Rol</label>
                 <div className="col-sm-9">
-                  <select id="role" className="form-select" value={role} onChange={e => setRole(e.target.value)}>
+                  <select
+                    id="role"
+                    className="form-select"
+                    value={role}
+                    onChange={e => setRole(e.target.value)}
+                  >
                     <option value="cliente">Cliente</option>
                     <option value="logistica">Logística</option>
                     <option value="admin">Administrador</option>
@@ -103,8 +108,23 @@ export default function StaffDetail() {
                 </div>
               </div>
 
-              <div className="text-center">
-                <button type="submit" className="btn px-4 py-2 text-white" style={{ backgroundColor: '#8B4513' }}>
+              <div className="d-flex justify-content-center gap-2">
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ backgroundColor:'#FAF0E6', color:'#5A2E1B', border:'1px solid #5A2E1B' }}
+                  onClick={() => navigate(-1)} // o navigate('/staff')
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn px-4 py-2 text-white"
+                  style={{ backgroundColor: isDirty ? '#8B4513' : '#A7876E' }}
+                  disabled={!isDirty}
+                  title={!isDirty ? 'No hay cambios' : undefined}
+                >
                   Guardar cambios
                 </button>
               </div>

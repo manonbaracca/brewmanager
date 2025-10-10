@@ -139,7 +139,7 @@ export default function Dashboard() {
         <div className="card shadow-sm mb-4">
           <div className="card-body d-flex flex-wrap align-items-center gap-3">
             <div>
-              <label className="form-label mb-1">Desde</label>
+              <label className="form-label mb-1">Fecha Desde</label>
               <input
                 type="date"
                 className="form-control"
@@ -148,7 +148,7 @@ export default function Dashboard() {
               />
             </div>
             <div>
-              <label className="form-label mb-1">Hasta</label>
+              <label className="form-label mb-1">Fecha Hasta</label>
               <input
                 type="date"
                 className="form-control"

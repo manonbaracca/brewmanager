@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.utils import timezone
-from .utils import log_action
-
+from .utils import log_action, send_async_email
+from django.conf import settings
 from rest_framework import viewsets, permissions, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
 from rest_framework.response import Response
@@ -117,6 +117,38 @@ class PedidoViewSet(viewsets.ModelViewSet):
             'order_add',
             f'Creó pedido {pedido.numero_pedido} (items: {items})'
         )
+        try:
+            user = self.request.user
+            to_email = (user.email or '').strip()
+            if to_email:
+                frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+                detail_url = f"{frontend}/pedidos/{pedido.id}"
+
+                lineas = []
+                for det in pedido.detalles.select_related('producto__categoria').all():
+                    prod = det.producto
+                    cat  = getattr(prod.categoria, 'nombre', '—')
+                    lineas.append(f"  - {prod.nombre} (Cat: {cat}) x {det.cantidad}")
+
+                fecha_str = timezone.localtime(pedido.fecha).strftime('%d/%m/%Y %H:%M')
+                cuerpo = (
+                    f"Hola {user.username},\n\n"
+                    f"¡Gracias por tu pedido!\n\n"
+                    f"Número de pedido: {pedido.numero_pedido}\n"
+                    f"Fecha: {fecha_str}\n"
+                    f"Estado: Pendiente\n\n"
+                    f"Productos:\n" + ("\n".join(lineas) if lineas else "  (sin ítems)") + "\n\n"
+                    f"Podés ver el detalle acá:\n{detail_url}\n\n"
+                    f"Saludos,\nBrewManager"
+                )
+
+                send_async_email(
+                    subject="Confirmación de pedido - BrewManager",
+                    message=cuerpo,
+                    to_email=to_email,
+                )
+        except Exception:
+            pass
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -220,14 +252,36 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+
         user_id = self.request.query_params.get('user_id')
-        fecha = self.request.query_params.get('date')
+        exact_date = self.request.query_params.get('date')
+
+        date_from = self.request.query_params.get('date_from')
+        date_to   = self.request.query_params.get('date_to')
+        role      = (self.request.query_params.get('role') or '').strip().lower()
+        q         = (self.request.query_params.get('q') or '').strip()
+
         if user_id:
             qs = qs.filter(user_id=user_id)
-        if fecha:
-            qs = qs.filter(timestamp__date=fecha)
-        return qs
 
+        if exact_date:
+            qs = qs.filter(timestamp__date=exact_date)
+
+        if date_from:
+            qs = qs.filter(timestamp__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(timestamp__date__lte=date_to)
+
+        if role:
+            if role == 'admin':
+                qs = qs.filter(user__is_superuser=True)
+            else:
+                qs = qs.filter(user__profile__role=role)
+
+        if q:
+            qs = qs.filter(user__username__icontains=q)
+
+        return qs
 
 class RepartidorViewSet(viewsets.ModelViewSet):
     queryset = Repartidor.objects.all()
