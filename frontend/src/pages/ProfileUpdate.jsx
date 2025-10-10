@@ -11,6 +11,7 @@ export default function ProfileUpdate() {
     direccion: '',
   })
   const [role, setRole] = useState('')
+  const [isSuper, setIsSuper] = useState(false)
   const [alerts, setAlerts] = useState([])
   const navigate = useNavigate()
 
@@ -23,10 +24,12 @@ export default function ProfileUpdate() {
         setFormData({
           username: data.username,
           email:    data.email,
-          telefono: data.telefono,
-          direccion:data.direccion,
+          telefono: data.telefono ?? '',
+          direccion:data.direccion ?? '',
         })
-        setRole(data.role || '')
+        setIsSuper(!!data.is_superuser)      
+        setRole(data.is_superuser ? 'admin' : (data.role || '')) 
+
       } catch {
         if (alive) setAlerts([{ type: 'danger', msg: 'No se pudo cargar el perfil.' }])
       }
@@ -43,11 +46,13 @@ export default function ProfileUpdate() {
     setAlerts([])
     try {
       await initCsrf()
-      await api.post(
-        '/api/profile/update/',
-        new URLSearchParams(formData), 
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      )
+      const payload = new URLSearchParams({
+        telefono: formData.telefono || '',
+        direccion: formData.direccion || ''
+      })
+      await api.post('/api/profile/update/', payload, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      })
       navigate('/profile', { state: { successMessage: 'Perfil actualizado exitosamente' } })
     } catch (err) {
       const data = err.response?.data
@@ -60,7 +65,7 @@ export default function ProfileUpdate() {
     }
   }
 
-  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'
+  const roleLabel = (isSuper ? 'Admin' : (role ? role.charAt(0).toUpperCase() + role.slice(1) : '—'))
 
   return (
     <Base title="Actualizar Información">

@@ -13,7 +13,6 @@ export default function StaffDetail() {
   const [flash, setFlash]     = useState('')
   const [loading, setLoading] = useState(true)
 
-  // Rol original (derivado del usuario cargado)
   const originalRole = useMemo(() => user?.role || '', [user])
   const isDirty = role !== originalRole
 
@@ -24,7 +23,7 @@ export default function StaffDetail() {
         const { data } = await api.get(`/api/staff/${id}/`)
         if (!alive) return
         setUser(data)
-        setRole(data.role || '')
+        setRole(data.is_superuser ? 'admin' : (data.role || '')) 
       } catch (e) {
         if (!alive) return
         setError('No se pudo cargar la información del usuario.')
@@ -35,6 +34,7 @@ export default function StaffDetail() {
     })()
     return () => { alive = false }
   }, [id])
+  
 
   const handleSubmit = async e => {
     e.preventDefault()

@@ -41,13 +41,17 @@ def current_user(request):
             'role': None,
         })
     profile = getattr(u, 'profile', None)
+    role = getattr(profile, 'role', None)
+    if u.is_superuser:
+        role = 'admin'  
+
     return Response({
         'is_authenticated': True,
         'id': u.id,
         'username': u.username,
         'email': u.email,
         'is_superuser': u.is_superuser,
-        'role': getattr(profile, 'role', None),
+        'role': role,
     })
 
 
