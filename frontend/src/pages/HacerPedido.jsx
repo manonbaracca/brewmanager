@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Base from '@/components/Base'
-import api from '@/lib/api'
+import api, { initCsrf } from '@/lib/api'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 export default function HacerPedido() {
   const navigate = useNavigate()
@@ -11,9 +12,12 @@ export default function HacerPedido() {
   const [allProducts, setAllProducts]     = useState([])
   const [productos, setProductos]         = useState([])
   const [carrito, setCarrito]             = useState([])
-  const [alertas, setAlertas]             = useState([])
+
+  const [alertas, setAlertas]             = useState([]) 
   const [loading, setLoading]             = useState(true)
   const [isSubmitting, setIsSubmitting]   = useState(false)
+
+  const [confirmOpen, setConfirmOpen]     = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -27,7 +31,7 @@ export default function HacerPedido() {
         setAllProducts(prods)
         setProductos(prods)
       })
-      .catch(() => setAlertas([{ type: 'danger', msg: 'Error al cargar datos iniciales.' }]))
+      .catch(() => pushAlerta('danger', 'Error al cargar datos iniciales.'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -39,7 +43,21 @@ export default function HacerPedido() {
     }
   }, [selectedCat, allProducts])
 
-  const pushAlerta = (type, msg) => setAlertas(a => [...a, { type, msg }])
+  const pastel = {
+    success: { background:'#d4edda', borderColor:'#c3e6cb', color:'#155724' },
+    danger:  { background:'#f8d7da', borderColor:'#f5c6cb', color:'#721c24' },
+    warning: { background:'#fff3cd', borderColor:'#ffeeba', color:'#856404' },
+    info:    { background:'#d1ecf1', borderColor:'#bee5eb', color:'#0c5460' },
+  }
+  const pushAlerta = (type, msg, timeout=2500) => {
+    const id = Math.random().toString(36).slice(2)
+    setAlertas(a => [...a, { id, type, msg }])
+    if (timeout) {
+      setTimeout(() => {
+        setAlertas(a => a.filter(x => x.id !== id))
+      }, timeout)
+    }
+  }
 
   const handleAgregarCarrito = (producto, cantidad) => {
     if (cantidad < 1) return pushAlerta('danger', 'La cantidad debe ser al menos 1.')
@@ -47,7 +65,7 @@ export default function HacerPedido() {
     const enCarrito  = carrito.find(item => item.id === producto.id)?.cantidad || 0
     const disponible = producto.cantidad - enCarrito
     if (cantidad > disponible) {
-      return pushAlerta('danger', `No hay suficiente stock para ${producto.nombre}. Quedan ${disponible}.`)
+      return pushAlerta('danger', `No hay suficiente stock para ${producto.nombre}. Quedan ${disponible}.`, 3500)
     }
 
     setCarrito(prev => {
@@ -69,28 +87,31 @@ export default function HacerPedido() {
 
   const handleRealizarPedido = () => {
     if (carrito.length === 0) return pushAlerta('warning', 'El carrito está vacío.')
-    if (!window.confirm('¿Confirmas el pedido?')) return
+    setConfirmOpen(true)
+  }
 
+  const confirmarPedido = async () => {
+    setConfirmOpen(false)
     setIsSubmitting(true)
     const payload = {
       detalles: carrito.map(item => ({ producto_id: item.id, cantidad: item.cantidad }))
     }
-
-    api.post('/api/pedidos/', payload)
-      .then(({ data }) => {
-        const num = data?.numero_pedido
-        navigate('/staff-index', {
-          state: { successMessage: num ? `Pedido ${num} creado correctamente.` : 'Pedido creado correctamente.' }
-        })
+    try {
+      await initCsrf() 
+      const { data } = await api.post('/api/pedidos/', payload)
+      const num = data?.numero_pedido
+      navigate('/staff-index', {
+        state: { successMessage: num ? `Pedido ${num} creado correctamente.` : 'Pedido creado correctamente.' }
       })
-      .catch(err => {
-        const msg =
-          err.response?.data?.detalles?.[0] ||
-          err.response?.data?.detail ||
-          'Error al crear pedido.'
-        pushAlerta('danger', msg)
-      })
-      .finally(() => setIsSubmitting(false))
+    } catch (err) {
+      const msg =
+        err.response?.data?.detalles?.[0] ||
+        err.response?.data?.detail ||
+        'Error al crear pedido.'
+      pushAlerta('danger', msg, 4000)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (loading) {
@@ -104,16 +125,16 @@ export default function HacerPedido() {
   return (
     <Base title="Hacer Pedido">
       <div className="container my-4">
-        {alertas.map((a, i) => (
+        {alertas.map(a => (
           <div
-            key={i}
-            className={`alert alert-${a.type} alert-dismissible fade show`}
-            style={{ backgroundColor: a.type === 'danger' ? '#8B0000' : '#A0522D', color: '#FFF' }}
+            key={a.id}
+            className="alert alert-dismissible fade show"
+            style={{ ...pastel[a.type || 'info'], border:'1px solid', borderRadius:8 }}
           >
             {a.msg}
             <button
-              className="btn-close btn-close-white"
-              onClick={() => setAlertas(cur => cur.filter((_, idx) => idx !== i))}
+              className="btn-close"
+              onClick={() => setAlertas(cur => cur.filter(x => x.id !== a.id))}
             />
           </div>
         ))}
@@ -155,7 +176,7 @@ export default function HacerPedido() {
                           defaultValue={1}
                           id={`cant-${p.id}`}
                           className="form-control form-control-sm me-2"
-                          style={{ width: '60px', borderColor: '#8B4513' }}
+                          style={{ width: '64px', borderColor: '#8B4513' }}
                         />
                         <button
                           className="btn btn-sm text-white"
@@ -218,6 +239,16 @@ export default function HacerPedido() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Confirmar Pedido"
+        message="¿Deseás confirmar y enviar el pedido?"
+        confirmText="Sí, confirmar"
+        cancelText="Cancelar"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={confirmarPedido}
+      />
     </Base>
   )
 }
