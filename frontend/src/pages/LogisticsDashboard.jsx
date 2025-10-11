@@ -45,12 +45,57 @@ function matchByDate(isoString, filtro) {
   return true
 }
 
+function EtaModal({ open, onClose, onConfirm }) {
+  const [dias, setDias] = useState('')
+  useEffect(() => { if (!open) setDias('') }, [open])
+
+  if (!open) return null
+  return (
+    <div style={{
+      position:'fixed', inset:0, background:'rgba(0,0,0,.45)',
+      display:'flex', alignItems:'center', justifyContent:'center', zIndex:1050
+    }}>
+      <div className="card shadow" style={{ width: 420, borderRadius:12 }}>
+        <div className="card-header text-white" style={{ background:'#0d6efd' }}>
+          Estimar entrega
+        </div>
+        <div className="card-body">
+          <label className="form-label">Tiempo estimado de entrega (en días)</label>
+          <input
+            type="number"
+            min="1"
+            className="form-control"
+            value={dias}
+            onChange={e => setDias(e.target.value)}
+            placeholder="Ej: 2"
+          />
+          <small className="text-muted d-block mt-2">
+            Opcional: si lo dejás vacío, se marcará “En camino” sin ETA.
+          </small>
+        </div>
+        <div className="card-footer d-flex justify-content-end gap-2 bg-white">
+          <button className="btn btn-outline-secondary" onClick={onClose}>Cancelar</button>
+          <button
+            className="btn btn-primary"
+            onClick={() => onConfirm(dias ? Math.max(1, Number(dias)) : null)}
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function LogisticsDashboard() {
   const [me, setMe] = useState(null)
   const [orders, setOrders] = useState([])
   const [filtroFecha, setFiltroFecha] = useState('Todos')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+
+  const [etaModalOpen, setEtaModalOpen] = useState(false)
+  const [etaOrder, setEtaOrder] = useState(null)
 
   const fetchAll = () => {
     setLoading(true)
@@ -67,20 +112,9 @@ export default function LogisticsDashboard() {
   const patchOrder = async (id, patch) => {
     try {
       await initCsrf()
-      const doPatch = () => api.patch(`/api/pedidos/${id}/`, patch)
-      let { data: updated } = await doPatch()
+      const { data: updated } = await api.patch(`/api/pedidos/${id}/`, patch)
       setOrders(cur => cur.map(o => (o.id === id ? { ...o, ...updated } : o)))
     } catch (err) {
-      const detail = err?.response?.data?.detail || ''
-      const isCsrf = err?.response?.status === 403 && /csrf/i.test(detail)
-      if (isCsrf) {
-        try {
-          await initCsrf()
-          const { data: updated } = await api.patch(`/api/pedidos/${id}/`, patch)
-          setOrders(cur => cur.map(o => (o.id === id ? { ...o, ...updated } : o)))
-          return
-        } catch {}
-      }
       setError('Error al actualizar pedido.')
     }
   }
@@ -89,33 +123,28 @@ export default function LogisticsDashboard() {
     await patchOrder(o.id, { status: 'en_proceso' })
   }
 
+  const abrirEta = (o) => { setEtaOrder(o); setEtaModalOpen(true) }
+  const confirmarEta = async (dias) => {
+    const o = etaOrder
+    setEtaModalOpen(false); setEtaOrder(null)
+    const patch = { status: 'en_camino' }
+    if (dias) patch.delivery_days = dias
+    await patchOrder(o.id, patch)
+  }
+
   const cambiarEstado = async (o, next) => {
-    if (next === 'en_camino') {
-      const val = window.prompt('¿Tiempo estimado de entrega (en días)?', '')
-      const patch = { status: 'en_camino' }
-      if (val && !isNaN(Number(val))) patch.delivery_days = Math.max(1, Number(val))
-      await patchOrder(o.id, patch)
-      return
-    }
+    if (next === 'en_camino') { abrirEta(o); return }
     await patchOrder(o.id, { status: next })
   }
 
-  const pendientes = useMemo(
-    () => orders.filter(o => normalizeStatus(o.status) === 'pendiente'),
-    [orders]
-  )
+  const pendientes = useMemo(() => orders.filter(o => normalizeStatus(o.status) === 'pendiente'), [orders])
+  const enCurso = useMemo(() => orders.filter(o => {
+    const s = normalizeStatus(o.status); return s === 'en_proceso' || s === 'en_camino'
+  }), [orders])
 
-  const enCurso = useMemo(
-    () => orders.filter(o => {
-      const s = normalizeStatus(o.status)
-      return s === 'en_proceso' || s === 'en_camino'
-    }),
-    [orders]
-  )
 
   const esMio = (o) => (o?.assigned_to?.name || '') === (me?.username || '')
   const enCursoMios = useMemo(() => enCurso.filter(esMio), [enCurso, me])
-
   const aceptadosMiosFiltrados = useMemo(
     () => orders.filter(o => isAccepted(o.status) && esMio(o) && matchByDate(o.fecha, filtroFecha)),
     [orders, filtroFecha, me]
@@ -127,23 +156,17 @@ export default function LogisticsDashboard() {
 
   const renderBadge = (status) => {
     const key = normalizeStatus(status)
-    return (
-      <span className="badge" style={{ backgroundColor: STATUS_BG[key] || '#6c757d' }}>
-        {STATUS_LABELS[key] || key}
-      </span>
-    )
+    return <span className="badge" style={{ backgroundColor: STATUS_BG[key] || '#6c757d' }}>
+      {STATUS_LABELS[key] || key}
+    </span>
   }
   const renderEntregaEstimada = (o) => {
     if (!o.entrega_estimada) return null
     try {
-      return (
-        <small className="text-muted d-block">
-          Entrega estimada: {new Date(o.entrega_estimada).toLocaleDateString('es-ES')}
-        </small>
-      )
-    } catch {
-      return null
-    }
+      return <small className="text-muted d-block">
+        Entrega estimada: {new Date(o.entrega_estimada).toLocaleDateString('es-ES')}
+      </small>
+    } catch { return null }
   }
 
   if (loading) {
@@ -200,75 +223,46 @@ export default function LogisticsDashboard() {
             </div>
           </div>
         </div>
-
         <div className="card shadow-sm border-0 mb-4">
-          <div className="card-header text-white bg-brand-1">
-            Pedidos disponibles (Pendiente)
-          </div>
+          <div className="card-header text-white bg-brand-1">Pedidos disponibles (Pendiente)</div>
           <div className="card-body p-0">
             <table className="table table-hover table-soft table-sticky mb-0">
               <thead className="text-white text-center bg-brand-2">
-                <tr>
-                  <th>N° Pedido</th>
-                  <th>Cliente</th>
-                  <th>Fecha</th>
-                  <th>Repartidor</th>
-                  <th>Acción</th>
-                </tr>
+                <tr><th>N° Pedido</th><th>Cliente</th><th>Fecha</th><th>Repartidor</th><th>Acción</th></tr>
               </thead>
               <tbody>
                 {pendientes.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="text-center text-muted py-4">No hay pedidos pendientes.</td>
-                  </tr>
+                  <tr><td colSpan="5" className="text-center text-muted py-4">No hay pedidos pendientes.</td></tr>
                 ) : pendientes.map(o => (
                   <tr key={o.id} className="text-center">
                     <td>{o.numero_pedido}</td>
                     <td>{o.usuario?.username ?? '—'}</td>
                     <td>{o.fecha ? new Date(o.fecha).toLocaleDateString('es-ES') : '—'}</td>
                     <td><em className="text-muted">{me?.username ? `Se asignará a ${me.username}` : '—'}</em></td>
-                    <td>
-                      <button className="btn btn-sm btn-success" onClick={() => aceptarPedido(o)}>
-                        Aceptar
-                      </button>
-                    </td>
+                    <td><button className="btn btn-sm btn-success" onClick={() => aceptarPedido(o)}>Aceptar</button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-
         <div className="card shadow-sm border-0">
-          <div className="card-header text-white bg-brand-1">
-            Pedidos en curso (En proceso / En camino)
-          </div>
+          <div className="card-header text-white bg-brand-1">Pedidos en curso (En proceso / En camino)</div>
           <div className="card-body p-0">
             <table className="table table-hover table-soft table-sticky mb-0">
               <thead className="text-white text-center bg-brand-2">
-                <tr>
-                  <th>N° Pedido</th>
-                  <th>Cliente</th>
-                  <th>Estado</th>
-                  <th>Repartidor</th>
-                  <th>Acciones</th>
-                </tr>
+                <tr><th>N° Pedido</th><th>Cliente</th><th>Estado</th><th>Repartidor</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 {enCursoMios.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="text-center text-muted py-4">No hay pedidos en curso.</td>
-                  </tr>
+                  <tr><td colSpan="5" className="text-center text-muted py-4">No hay pedidos en curso.</td></tr>
                 ) : enCursoMios.map(o => {
                   const status = normalizeStatus(o.status)
                   return (
                     <tr key={o.id} className="text-center">
                       <td>{o.numero_pedido}</td>
                       <td>{o.usuario?.username ?? '—'}</td>
-                      <td>
-                        {renderBadge(o.status)}
-                        {renderEntregaEstimada(o)}
-                      </td>
+                      <td>{renderBadge(o.status)}{renderEntregaEstimada(o)}</td>
                       <td>{o.assigned_to ? `${o.assigned_to.name} (${o.assigned_to.country})` : '—'}</td>
                       <td className="d-flex justify-content-center gap-2">
                         {status === 'en_proceso' && (
@@ -289,7 +283,6 @@ export default function LogisticsDashboard() {
             </table>
           </div>
         </div>
-
         <div className="card shadow-sm border-0 mt-4">
           <div className="card-header text-white bg-brand-1">
             Historial de pedidos aceptados ({filtroFecha})
@@ -327,6 +320,11 @@ export default function LogisticsDashboard() {
         </div>
 
       </div>
+      <EtaModal
+        open={etaModalOpen}
+        onClose={() => { setEtaModalOpen(false); setEtaOrder(null) }}
+        onConfirm={confirmarEta}
+      />
     </Base>
   )
 }

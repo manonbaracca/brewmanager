@@ -244,6 +244,38 @@ class PedidoViewSet(viewsets.ModelViewSet):
                 data['entrega_estimada'] = entrega.isoformat()
             except ValueError:
                 pass  
+        try:
+            user = pedido.usuario
+            to_email = (user.email or '').strip()
+            if to_email:
+                frontend = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+                detail_url = f"{frontend}/pedidos/{pedido.id}"
+
+                if pedido.status == 'en_camino':
+                    subj = "Tu pedido está en camino - BrewManager"
+                    eta_txt = (pedido.entrega_estimada and pedido.entrega_estimada.strftime('%d/%m/%Y')) or '—'
+                    body = (
+                        f"Hola {user.username},\n\n"
+                        f"Tu pedido {pedido.numero_pedido} está EN CAMINO.\n"
+                        f"Entrega estimada: {eta_txt}\n\n"
+                        f"Podés ver el detalle acá:\n{detail_url}\n\n"
+                        f"Saludos,\nBrewManager"
+                    )
+                    send_async_email(subj, body, to_email)
+                    log_action(request.user, 'order_edit', f'Notificó por mail: {pedido.numero_pedido} en_camino')
+
+                if pedido.status == 'entregado':
+                    subj = "Tu pedido fue entregado - BrewManager"
+                    body = (
+                        f"Hola {user.username},\n\n"
+                        f"¡Tu pedido {pedido.numero_pedido} fue ENTREGADO!\n\n"
+                        f"Detalle del pedido:\n{detail_url}\n\n"
+                        f"Gracias por comprar en BrewManager."
+                    )
+                    send_async_email(subj, body, to_email)
+                    log_action(request.user, 'order_edit', f'Notificó por mail: {pedido.numero_pedido} entregado')
+        except Exception:
+            pass
 
         serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
